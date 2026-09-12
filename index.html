@@ -9,14 +9,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=Familjen+Grotesk:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&amp;family=Archivo:wdth,wght@75..100,400..900&amp;display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#080b11;--bg2:#0c111a;--panel:#111827;--panel2:#0f1521;--line:#1f2836;--line2:#2a3648;
-    --txt:#e8edf5;--muted:#8593a8;--dim:#5b6982;--green:#2ee6a6;--amber:#f5b95c;--red:#ff6b7a;--blue:#6aa8ff;--purple:#b98cff;
-    --accent:#2ee6a6;--btn-txt:#04120c;--green-soft:#0f3a2f;--red-soft:#3a151b;
+    --bg:#0f1420;--bg2:#0a0e17;--panel:#161c29;--panel2:#131825;--line:#28324a;--line2:#34405c;
+    --txt:#eae6da;--muted:#8891a3;--dim:#5c6478;--green:#4a9c86;--amber:#d9a54a;--red:#c1584b;--blue:#6b93c7;--purple:#9b84c9;
+    --accent:#c08a3e;--btn-txt:#1a1206;--green-soft:#16302a;--red-soft:#2e1b18;
     --f-body:'Manrope',-apple-system,BlinkMacSystemFont,sans-serif;
     --f-disp:'Sora',sans-serif;
     --f-mono:'IBM Plex Mono',monospace;
-    --glow:radial-gradient(1100px 500px at 82% -8%, rgba(46,230,166,.09), transparent 60%),radial-gradient(900px 500px at -5% 8%, rgba(106,168,255,.07), transparent 55%),linear-gradient(180deg,var(--bg),var(--bg2));
-    --radius:16px;font-family:var(--f-body);
+    --glow:linear-gradient(180deg,var(--bg),var(--bg2));
+    --radius:8px;font-family:var(--f-body);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg);color:var(--txt);min-height:100%}
@@ -51,12 +51,12 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media(max-width:820px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
   .stat{text-align:center}
-  .stat .lbl{font-size:11.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+  .stat .lbl{font-size:12px;color:var(--muted);font-weight:500}
   .stat .big{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--green);margin-top:6px}
   table{width:100%;border-collapse:collapse}
   #monthly-table th{font-size:9.5px;padding:7px 5px;white-space:normal;line-height:1.25}
   #monthly-table td{padding:8px 5px;font-size:12px;white-space:nowrap}
-  th{text-align:left;font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{text-align:left;font-size:12px;color:var(--dim);font-weight:600;padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
   td{padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap}
   td.num,th.num{text-align:right;font-family:var(--f-mono)}
   tr.clickable{cursor:pointer;transition:background .12s}
@@ -68,16 +68,16 @@
   .note{font-size:12px;color:var(--dim);line-height:1.6;margin-top:12px}
   .chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;margin:0 8px 8px 0}
   .chip button{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;font-weight:700}
-  .chart-title{font-family:var(--f-disp);font-size:13px;font-weight:700;margin-bottom:12px;color:var(--txt);text-transform:uppercase;letter-spacing:.4px}
+  .chart-title{font-family:var(--f-disp);font-size:13px;font-weight:600;margin-bottom:12px;color:var(--txt)}
   .dragzone{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .dragcard{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:var(--radius);padding:22px;position:relative;min-height:200px}
   .dragcard.dragging{opacity:.35}
-  .dragcard.dragover{border-color:var(--green);box-shadow:0 0 0 2px rgba(46,230,166,.25)}
+  .dragcard.dragover{border-color:var(--green);box-shadow:0 0 0 2px rgba(74,156,134,.25)}
   .drag-handle{position:absolute;top:16px;right:18px;color:var(--dim);font-size:17px;cursor:grab;user-select:none;line-height:1;padding:2px 4px;border-radius:6px}
   .drag-handle:hover{color:var(--txt);background:var(--bg2)}
   .drag-handle:active{cursor:grabbing}
   .mgmini{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
-  .mgmini .lbl{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  .mgmini .lbl{font-size:11px;color:var(--dim);margin-bottom:4px}
   .mgmini .big{font-size:18px;font-weight:700;font-family:var(--f-mono)}
   @media(max-width:900px){.dragzone{grid-template-columns:1fr}}
   .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
@@ -95,74 +95,15 @@
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
   .pos{color:var(--green)} .neg{color:var(--red)}
   footer{text-align:center;color:var(--dim);font-size:12px;margin-top:34px}
-  /* light theme */
-  body.light{--bg:#eef1f6;--bg2:#ffffff;--panel:#ffffff;--panel2:#f6f8fc;--line:#e4e8f0;--line2:#ccd4e0;--txt:#18233a;--muted:#5b6982;--dim:#93a0b5;--green-soft:#d7f5ea;--red-soft:#ffe1e4}
-  body.light{background-image:radial-gradient(1100px 500px at 82% -8%, rgba(46,230,166,.10), transparent 60%),radial-gradient(900px 500px at -5% 8%, rgba(106,168,255,.08), transparent 55%),linear-gradient(180deg,#eef1f6,#e7ebf2)}
-  body.light .card{background:#ffffff}
-  body.light .tab.active{background:#eaf6f0;color:#0f9d73;box-shadow:0 0 0 1px var(--line2)}
-  body.light .modal{background:#ffffff}
-  body.light .logo{color:#04120c}
-
-  /* ===== A · Registro — carta contabile ===== */
-  body.t-registro{
-    --bg:#e8ece6;--bg2:#f3f5f1;--panel:#f3f5f1;--panel2:#eaeee7;--line:#d3dad4;--line2:#b9c2ba;
-    --txt:#1f2a24;--muted:#6b7a71;--dim:#8a978f;
-    --accent:#c0392f;--btn-txt:#fdf6f4;
-    --green:#2b6b4c;--red:#c0392f;--amber:#a9762a;--blue:#2b6ea8;--purple:#7a4f97;
-    --green-soft:#dce7dc;--red-soft:#f3d9d5;
-    --f-body:'Familjen Grotesk',sans-serif;--f-disp:'Familjen Grotesk',sans-serif;--f-mono:'Space Mono',monospace;
-    --glow:none;--radius:5px;
-  }
-  body.t-registro .card,body.t-registro .modal{background:var(--panel)}
-  body.t-registro .tabs{border-radius:5px;background:var(--panel2)}
-  body.t-registro .tab{border-radius:3px}
-  body.t-registro .tab.active{background:var(--bg2);box-shadow:inset 0 -3px 0 var(--accent)}
-  body.t-registro .logo{border-radius:4px}
-  body.t-registro .btn,body.t-registro input,body.t-registro select{border-radius:4px}
-  body.t-registro th{border-bottom:1.5px solid var(--txt)}
-  body.t-registro tbody tr:nth-child(even){background:#eaeee7}
-  body.t-registro .stat .big,body.t-registro td.num{letter-spacing:-.5px}
-
-  /* ===== B · Terminale — postazione dati ===== */
-  body.t-terminale{
-    --bg:#12161c;--bg2:#0b0e13;--panel:#12161c;--panel2:#0f141a;--line:#1a212b;--line2:#232c38;
-    --txt:#c8d2de;--muted:#5a6878;--dim:#4a5666;
-    --accent:#e0a244;--btn-txt:#14100a;
-    --green:#3fd39b;--red:#ef5f6d;--amber:#e0a244;--blue:#57a8e8;--purple:#a58cf0;
-    --green-soft:#132922;--red-soft:#2a171a;
-    --f-body:'IBM Plex Sans Condensed',sans-serif;--f-disp:'IBM Plex Sans Condensed',sans-serif;--f-mono:'IBM Plex Mono',monospace;
-    --glow:none;--radius:2px;
-  }
-  body.t-terminale .card,body.t-terminale .modal{background:var(--panel)}
-  body.t-terminale .tabs{border-radius:2px;padding:0;background:var(--bg2)}
-  body.t-terminale .tab{border-radius:0;border-right:1px solid var(--line2);letter-spacing:.8px;font-size:12.5px;text-transform:uppercase}
-  body.t-terminale .tab.active{background:var(--panel);box-shadow:inset 0 -2px 0 var(--accent)}
-  body.t-terminale .btn,body.t-terminale input,body.t-terminale select,body.t-terminale .chip,body.t-terminale .logo{border-radius:2px}
-  body.t-terminale td{padding:6px 8px;font-size:12.5px}
-  body.t-terminale th{background:var(--bg2)}
-  body.t-terminale .card{padding:16px}
-
-  /* ===== C · Rosa — quotidiano sportivo ===== */
-  body.t-rosa{
-    --bg:#f9dde4;--bg2:#fdf0f4;--panel:#fdf0f4;--panel2:#f7d6de;--line:#e3bfca;--line2:#c9a3b0;
-    --txt:#191316;--muted:#8a5766;--dim:#a67d8a;
-    --accent:#191316;--btn-txt:#f9dde4;
-    --green:#1f6b45;--red:#a8202f;--amber:#8f6216;--blue:#2b5f9e;--purple:#6f3f86;
-    --green-soft:#dcead8;--red-soft:#e9b9c1;
-    --f-body:'Archivo',sans-serif;--f-disp:'Archivo',sans-serif;--f-mono:'IBM Plex Mono',monospace;
-    --glow:none;--radius:3px;
-  }
-  body.t-rosa .card,body.t-rosa .modal{background:var(--panel)}
-  body.t-rosa .brand h1{font-weight:900;font-stretch:82%;letter-spacing:-1.4px;font-size:30px}
-  body.t-rosa .tabs{border-radius:0;background:transparent;border:none;border-bottom:2px solid var(--txt);padding:0 0 2px}
-  body.t-rosa .tab{border-radius:0;font-family:var(--f-mono);font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
-  body.t-rosa .tab.active{background:transparent;box-shadow:inset 0 -3px 0 var(--txt);color:var(--txt)}
-  body.t-rosa .btn,body.t-rosa input,body.t-rosa select,body.t-rosa .logo{border-radius:2px}
-  body.t-rosa .stat .big{font-family:var(--f-disp);font-weight:900;font-stretch:80%;letter-spacing:-1.6px;font-size:32px}
-  body.t-rosa .card h2{font-family:var(--f-mono);font-size:11px;letter-spacing:1.6px;text-transform:uppercase}
-  body.t-rosa th{border-bottom:1px solid var(--txt)}
+  /* light theme — stessa identità "libro mastro", su fondo chiaro */
+  body.light,html.light{--bg:#f2ede2;--bg2:#eae3d3;--panel:#fbf8f1;--panel2:#f2ede2;--line:#d9d0be;--line2:#c4b89f;--txt:#241f16;--muted:#6b6355;--dim:#948c7a;--green:#3a7a68;--red:#a8453a;--amber:#a8752e;--accent:#a8752e;--btn-txt:#fbf8f1;--green-soft:#dce8e0;--red-soft:#f2dad4}
+  body.light{background-image:linear-gradient(180deg,var(--bg),var(--bg2))}
+  body.light .card{background:var(--panel)}
+  body.light .tab.active{background:var(--panel2);color:var(--accent);box-shadow:0 0 0 1px var(--line2)}
+  body.light .modal{background:var(--panel)}
+  body.light .logo{color:var(--btn-txt)}
   /* id anagrafica */
-  .section-title{font-family:var(--f-disp);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin:20px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+  .section-title{font-family:var(--f-disp);font-weight:600;font-size:12px;color:var(--accent);margin:20px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
   .section-title:first-of-type{border-top:none;padding-top:0}
   .idcard{background:var(--bg2);border:1px solid var(--line2);border-radius:12px;padding:15px;cursor:pointer;transition:border-color .15s,transform .15s;position:relative}
   .idcard:hover{border-color:var(--accent);transform:translateY(-2px)}
@@ -173,7 +114,7 @@
   .idcard .idcard-order button{padding:2px 6px;font-size:11px}
   .idcard .idcard-order button:disabled{opacity:.25;cursor:default}
   .bookrow,.bookrow-head{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto auto;gap:8px;margin-bottom:8px;align-items:center}
-  .bookrow-head{font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .bookrow-head{font-size:11px;color:var(--dim);font-weight:600;margin-bottom:6px}
   .ib-limit-lbl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer}
   .ib-limit-lbl input{width:auto}
   @media(max-width:640px){.bookrow,.bookrow-head{grid-template-columns:1fr 1fr}}
@@ -194,9 +135,9 @@
   .res .k{color:var(--muted);font-size:13.5px;font-weight:600}
   .res .v{font-family:var(--f-mono);font-weight:600;font-size:16px}
   .v.green{color:var(--green)} .v.red{color:var(--red)} .v.amber{color:var(--amber)} .v.blue{color:var(--blue)}
-  .hero{background:linear-gradient(135deg,var(--green-soft),var(--bg2));border:1px solid rgba(46,230,166,.28);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center}
+  .hero{background:linear-gradient(135deg,var(--green-soft),var(--bg2));border:1px solid rgba(74,156,134,.28);border-radius:14px;padding:18px;margin-bottom:16px;text-align:center}
   .hero.loss{background:linear-gradient(135deg,var(--red-soft),var(--bg2));border-color:rgba(255,107,122,.28)}
-  .hero .lbl{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:1px}
+  .hero .lbl{font-size:12.5px;color:var(--muted);font-weight:500}
   .hero .big{font-family:var(--f-mono);font-size:34px;font-weight:600;margin-top:6px;color:var(--green)}
   .hero.loss .big{color:var(--red)}
   .hero .rating{font-size:12.5px;color:var(--muted);margin-top:4px}
@@ -208,11 +149,11 @@
   .mleg-topbar .selnum{font-weight:700;color:var(--dim);margin-right:2px}
   .mleg-topbar .mleg-book{margin-left:auto;flex:0 0 132px;padding:6px 8px;font-size:12px}
   .ctypebtn{border:1px solid var(--line2);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg2);color:var(--muted)}
-  .ctypebtn.banca{background:rgba(46,230,166,.12);border-color:var(--green);color:var(--green)}
+  .ctypebtn.banca{background:rgba(74,156,134,.12);border-color:var(--green);color:var(--green)}
   .ctypebtn.contro{background:rgba(255,107,122,.12);border-color:var(--red);color:var(--red)}
   .mleg-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .mleg-col{display:flex;flex-direction:column;gap:5px}
-  .mleg-col label{font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin:0;white-space:nowrap}
+  .mleg-col label{font-size:10.5px;color:var(--dim);font-weight:600;margin:0;white-space:nowrap}
   .mleg input,.mleg select{padding:8px 9px;font-size:13px;width:auto}
   .mleg .mleg-event{flex:1 1 150px;min-width:130px}
   .mleg .mleg-esito{flex:0 0 56px}
@@ -226,12 +167,12 @@
   .mleg-comm-inline::placeholder{color:var(--dim)}
   .mleg .mleg-rm{flex:0 0 auto;padding-bottom:8px}
   .rmrow{background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;font-weight:700}
-  .legrow .head{font-size:11px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+  .legrow .head{font-size:11px;color:var(--dim);font-weight:600}
   .selnum{font-family:var(--f-disp);font-weight:700;font-size:12px;color:var(--green)}
   .minibtn{background:var(--bg2);border:1px solid var(--line2);color:var(--muted);border-radius:9px;padding:9px 12px;font-size:13px;cursor:pointer;font-weight:600;font-family:var(--f-body);transition:all .15s}
   .minibtn:hover{border-color:var(--green);color:var(--green)}
   .otable{width:100%;border-collapse:collapse;margin-top:6px}
-  .otable th{text-align:left;font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:7px 6px;border-bottom:1px solid var(--line)}
+  .otable th{text-align:left;font-size:10.5px;color:var(--dim);font-weight:600;padding:7px 6px;border-bottom:1px solid var(--line)}
   .otable td{padding:9px 6px;border-bottom:1px solid var(--line);font-size:13.5px}
   .otable td.num{font-family:var(--f-mono);font-weight:600;text-align:right}
   .partitacell{max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -245,7 +186,7 @@
   #copy-toast.show{opacity:1;transform:translateY(0)}
   .topfields{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:6px}
   .tf{display:flex;flex-direction:column;gap:4px;flex:1 1 100px;min-width:78px}
-  .tf label{font-size:10px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+  .tf label{font-size:10px;color:var(--dim);font-weight:600;white-space:nowrap}
   .tf input,.tf select{padding:7px 8px;font-size:12.5px;width:100%;box-sizing:border-box}
   .tf select{min-width:110px}
   .tf.sm{flex:1 1 72px;min-width:60px}
@@ -257,13 +198,13 @@
   .guide b{color:var(--txt)}
   .guide .term{color:var(--green);font-weight:700}
   .stbtn{border:none;cursor:pointer;font-size:11px;font-weight:700;padding:5px 8px;border-radius:7px;font-family:var(--f-body);margin-right:4px}
-  .stbtn.book{background:rgba(46,230,166,.15);color:var(--green)}
+  .stbtn.book{background:rgba(74,156,134,.15);color:var(--green)}
   .stbtn.banca{background:rgba(255,107,122,.15);color:var(--red)}
   .stbtn.bankb{background:var(--bg2);color:var(--muted);border:1px solid var(--line2)}
   .stbtn.banked{background:rgba(245,185,92,.18);color:var(--amber)}
   .stbtn:hover{filter:brightness(1.35)}
   .badge{font-size:11px;font-weight:700;padding:4px 8px;border-radius:7px}
-  .badge.book{background:rgba(46,230,166,.15);color:var(--green)}
+  .badge.book{background:rgba(74,156,134,.15);color:var(--green)}
   .badge.banca{background:rgba(255,107,122,.15);color:var(--red)}
   .unlockb{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;margin-left:2px}
   .unlockb:hover{color:var(--txt)}
@@ -277,7 +218,7 @@
   .promo-row .bk{font-family:var(--f-disp);font-weight:700;font-size:14px}
   .promo-row .dl{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
   .promo-row .badge{font-family:var(--f-mono);font-size:10.5px;font-weight:600;letter-spacing:.4px;padding:3px 9px;border-radius:20px;margin-left:auto}
-  .promo-row .badge.ok{background:rgba(46,230,166,.14);color:var(--green)}
+  .promo-row .badge.ok{background:rgba(74,156,134,.14);color:var(--green)}
   .promo-row .badge.soon{background:rgba(245,185,92,.16);color:var(--amber)}
   .promo-row .badge.late{background:rgba(255,107,122,.16);color:var(--red)}
   .promo-row details{margin-top:10px}
@@ -640,7 +581,7 @@
         <h2><span class="dot"></span>Fun Bonus Slot</h2>
         <p class="sub">Bonus non prelevabile con rollover su slot: calcola target, tempistiche e valore atteso durante il gioco.</p>
 
-        <p class="sub" style="margin-top:2px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:var(--muted)">Dati generali del fun bonus</p>
+        <p class="sub" style="margin-top:2px;margin-bottom:10px;font-weight:600;color:var(--muted)">Dati generali del fun bonus</p>
         <div class="field row2">
           <div><label>Bonus iniziale €</label><input id="fun-bonus0" data-testid="fun-bonus0" value="50"></div>
           <div><label>Rollover (x)</label><input id="fun-rollover" data-testid="fun-rollover" value="30"></div>
@@ -654,13 +595,13 @@
           <input id="fun-rtp" data-testid="fun-rtp" value="95">
         </div>
 
-        <p class="sub" style="margin-top:18px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:var(--muted)">Tempistiche</p>
+        <p class="sub" style="margin-top:18px;margin-bottom:10px;font-weight:600;color:var(--muted)">Tempistiche</p>
         <div class="field row2">
           <div><label>Spin al minuto</label><input id="fun-spinmin" data-testid="fun-spinmin" value="50"></div>
           <div><label>Importo per spin €</label><input id="fun-spinamt" data-testid="fun-spinamt" value="0.30"></div>
         </div>
 
-        <p class="sub" style="margin-top:18px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:var(--muted)">Controllo del fun in corso</p>
+        <p class="sub" style="margin-top:18px;margin-bottom:10px;font-weight:600;color:var(--muted)">Controllo del fun in corso</p>
         <p class="sub" style="margin-top:-6px">Compila con i dati che vedi nel tuo conto gioco.</p>
         <div class="field row2">
           <div><label>Bonus attuale €</label><input id="fun-bonusnow" data-testid="fun-bonusnow" value="50"></div>
@@ -964,11 +905,8 @@
       <div style="max-width:340px">
         <label>Stile</label>
         <select id="theme-pick" data-testid="theme-pick">
-          <option value="dark">Originale — scuro</option>
-          <option value="light">Originale — chiaro</option>
-          <option value="t-registro">Registro — carta contabile</option>
-          <option value="t-terminale">Terminale — dati compatti</option>
-          <option value="t-rosa">Rosa — quotidiano sportivo</option>
+          <option value="dark">Scuro</option>
+          <option value="light">Chiaro</option>
         </select>
       </div>
       <p class="note" id="theme-note"></p>
@@ -2525,18 +2463,16 @@
   });
 
   // ---- tema chiaro/scuro ----
-  const THEMES=['dark','light','t-registro','t-terminale','t-rosa'];
+  const THEMES=['dark','light'];
   const THEME_NOTE={
-    'dark':'Lo stile originale: fondo scuro, accento verde menta.',
-    'light':'Lo stile originale su fondo chiaro.',
-    't-registro':'Carta contabile verde-grigia, cifre monospaziate, righe alternate. Pensato per leggere tanti numeri di seguito.',
-    't-terminale':'Righe compatte e angoli vivi, accento ambra. Ci stanno più movimenti a schermo.',
-    't-rosa':'Impaginazione da quotidiano sportivo: caratteri condensati e cifre in evidenza.'
+    'dark':'Fondo blu-inchiostro, accento ottone, numeri in monospaziato — pensato per leggere cifre a colpo d\'occhio.',
+    'light':'Stessa identità su fondo chiaro — carta chiara, accento ottone, numeri in monospaziato.'
   };
   function applyTheme(t){
     if(!THEMES.includes(t))t='dark';
-    document.body.classList.remove('light','t-registro','t-terminale','t-rosa');
-    if(t!=='dark')document.body.classList.add(t);
+    document.body.classList.remove('light');
+    document.documentElement.classList.remove('light');
+    if(t!=='dark'){document.body.classList.add(t);document.documentElement.classList.add(t);}
     $('theme-pick').value=t;
     $('theme-note').textContent=THEME_NOTE[t];
     localStorage.setItem('tk_theme',t);
@@ -2553,7 +2489,7 @@
     const w=520,pad={l:46,r:10,t:10,b:40};const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
     const vals=data.map(d=>d.value);const max=Math.max(0,...vals),min=Math.min(0,...vals);const range=(max-min)||1;
     const zY=pad.t+(max/range)*ih;const bw=iw/Math.max(data.length,1);
-    let s=`<line x1="${pad.l}" y1="${zY}" x2="${pad.l+iw}" y2="${zY}" stroke="#2a3648" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    let s=`<line x1="${pad.l}" y1="${zY}" x2="${pad.l+iw}" y2="${zY}" stroke="${cssv('--line2')}" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
     data.forEach((d,i)=>{const x=pad.l+i*bw+bw*0.18,bwi=bw*0.64;const y=d.value>=0?pad.t+((max-d.value)/range)*ih:zY;const bh=Math.abs(d.value)/range*ih;
       s+=`<rect x="${x}" y="${y}" width="${bwi}" height="${Math.max(bh,0)}" rx="3" fill="${d.value>=0?cssv('--green'):cssv('--red')}" opacity=".9"/>`;
       const vy=d.value>=0?y-5:y+bh+12;
@@ -2568,8 +2504,8 @@
     const X=i=>data.length>1?pad.l+i/(data.length-1)*iw:pad.l+iw/2;const Y=v=>pad.t+((max-v)/range)*ih;
     const pts=data.map((d,i)=>`${X(i)},${Y(d.value)}`).join(' ');
     const area=`${pad.l},${Y(0)} `+pts+` ${X(data.length-1)},${Y(0)}`;
-    let s=`<line x1="${pad.l}" y1="${Y(0)}" x2="${pad.l+iw}" y2="${Y(0)}" stroke="#2a3648" stroke-width="1"/>`;
-    s+=`<polygon points="${area}" fill="rgba(46,230,166,.12)"/>`;
+    let s=`<line x1="${pad.l}" y1="${Y(0)}" x2="${pad.l+iw}" y2="${Y(0)}" stroke="${cssv('--line2')}" stroke-width="1"/>`;
+    s+=`<polygon points="${area}" fill="rgba(74,156,134,.12)"/>`;
     s+=`<polyline points="${pts}" fill="none" stroke="${cssv('--green')}" stroke-width="1.6"/>`;
     const skip=Math.max(1,Math.ceil(data.length/maxLabels));
     data.forEach((d,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(d.value)}" r="2.6" fill="${cssv('--green')}"/>`;
@@ -2580,7 +2516,7 @@
     const w=520,rowH=30,labelW=120,valW=78,h=Math.max(data.length*rowH+6,40);const bw=w-labelW-valW;
     const maxAbs=Math.max(1,...data.map(d=>Math.abs(d.value)));let s='';
     data.forEach((d,i)=>{const y=i*rowH+5;const len=Math.abs(d.value)/maxAbs*bw;const col=d.value>=0?cssv('--green'):cssv('--red');
-      s+=`<text x="0" y="${y+rowH*0.5}" fill="#c9d3e2" font-size="11.5">${esc(d.label)}</text>`;
+      s+=`<text x="0" y="${y+rowH*0.5}" fill="${cssv('--txt')}" font-size="11.5">${esc(d.label)}</text>`;
       s+=`<rect x="${labelW}" y="${y-2}" width="${Math.max(len,1)}" height="${rowH-12}" rx="3" fill="${col}" opacity=".9"/>`;
       s+=`<text x="${w}" y="${y+rowH*0.5}" fill="${col}" font-size="11" text-anchor="end" font-family="'IBM Plex Mono'">${fmt(d.value)}</text>`;});
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet">${s}</svg>`;

@@ -727,9 +727,8 @@
   <section id="summary" class="pane">
     <div class="grid4" style="margin-bottom:20px">
       <div class="card stat"><div class="lbl">Profitto totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Bonus totale</div><div class="big" id="r-bonus">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Movimenti</div><div class="big" id="r-count">0</div></div>
-      <div class="card stat"><div class="lbl">Book attivi</div><div class="big" id="r-books">0</div></div>
+      <div class="card stat"><div class="lbl">Profitto anno in corso</div><div class="big" id="r-year" data-testid="r-year">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Profitto mese in corso</div><div class="big" id="r-month" data-testid="r-month">€ 0,00</div></div>
     </div>
 
     <div class="card" style="margin-bottom:20px;overflow-x:auto;padding-left:14px;padding-right:14px">
@@ -754,9 +753,7 @@
         <div class="chart-title">Maggiorate</div>
         <div class="grid4" style="margin-bottom:14px">
           <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="mg-stat-profit" data-testid="mg-stat-profit">€ 0,00</div></div>
-          <div class="mgmini"><div class="lbl">Puntato</div><div class="big" id="mg-stat-staked" data-testid="mg-stat-staked">€ 0,00</div></div>
-          <div class="mgmini"><div class="lbl">ROI</div><div class="big" id="mg-stat-roi" data-testid="mg-stat-roi">—</div></div>
-          <div class="mgmini"><div class="lbl">Concluse</div><div class="big" id="mg-stat-count" data-testid="mg-stat-count">0</div></div>
+          <div class="mgmini"><div class="lbl">Totale bet</div><div class="big" id="mg-stat-count" data-testid="mg-stat-count">0</div></div>
         </div>
         <div class="chart-title" style="font-size:11.5px;color:var(--dim)">Andamento profitto cumulato</div>
         <div id="mg-chart-cum"></div>
@@ -1571,9 +1568,11 @@
       const isMg=m.type==='Maggiorate';
       const pending=isMg&&!m.result;
       const tr=document.createElement('tr');tr.className='clickable';
+      const iniziale=isMg?`<span style="color:var(--dim);font-size:10px">Punt. </span>${fmt(parseFloat(m.stake)||0)}`:fmt(parseFloat(m.start)||0);
+      const finale=isMg?`<span style="color:var(--dim);font-size:10px">Quota </span>${m.quota?String(m.quota).replace('.',','):'–'}`:fmt(parseFloat(m.end)||0);
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td><td data-label="Tipologia">${esc(m.type)}</td><td data-label="Gioco">${esc(m.game)}</td><td data-label="Info">${esc(m.info)}</td>`+
-        `<td class="num" data-label="Iniziale">${fmt(parseFloat(m.start)||0)}</td>`+
-        `<td class="num" data-label="Finale">${fmt(parseFloat(m.end)||0)}</td>`+
+        `<td class="num" data-label="Iniziale">${iniziale}</td>`+
+        `<td class="num" data-label="Finale">${finale}</td>`+
         `<td class="num" data-label="Bonus" style="color:var(--amber)">${fmt(parseFloat(m.bonus)||0)}</td>`+
         `<td class="num" data-label="Ricaricato"${(parseFloat(m.reload)||0)?' style="color:var(--blue)"':''}>${fmt(parseFloat(m.reload)||0)}</td>`+
         `<td class="num ${pending?'':(p>=0?'pos':'neg')}" data-label="Profitto">${pending?'in sospeso':fmt(p)}</td>`+
@@ -2559,10 +2558,14 @@
 
   function renderSummary(){
     const tot=moves.reduce((s,m)=>s+profitOf(m),0);
-    const btot=moves.reduce((s,m)=>s+((m.type==='Maggiorate'&&!m.result)?0:(parseFloat(m.bonus)||0)),0);
+    const now=new Date();
+    const curYear=String(now.getFullYear());
+    const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const totYear=moves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
+    const totMonth=moves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
     const rt=$('r-total');rt.textContent=fmt(tot);rt.className='big '+(tot>=0?'pos':'neg');
-    $('r-bonus').textContent=fmt(btot);$('r-count').textContent=moves.length;
-    $('r-books').textContent=new Set(moves.map(m=>m.book).filter(Boolean)).size;
+    const ry=$('r-year');ry.textContent=fmt(totYear);ry.className='big '+(totYear>=0?'pos':'neg');
+    const rm=$('r-month');rm.textContent=fmt(totMonth);rm.className='big '+(totMonth>=0?'pos':'neg');
 
     // monthly by type: "Maggiorate" è ormai una tipologia vera, contata come le altre;
     // Fun bonus resta solo di riferimento, non sommato
@@ -2580,15 +2583,15 @@
     const mkCell=v=>`<td class="num ${v>=0?'pos':'neg'}">${v?fmt(v):'–'}</td>`;
     const mkInfoCell=v=>`<td class="num" style="color:${v>=0?'#8fe6c9':'#ffb3bc'}">${v?fmt(v):'–'}</td>`;
     const infoTh=REF_COLS.map(c=>`<th class="num" style="color:var(--amber)">${c} *</th>`).join('');
-    let th=`<thead><tr><th>Mese</th>${tipos.map(t=>`<th class="num">${t}</th>`).join('')}${infoTh}<th class="num">Totale</th></tr></thead>`;
+    let th=`<thead><tr><th>Mese</th><th class="num">Totale</th>${tipos.map(t=>`<th class="num">${t}</th>`).join('')}${infoTh}</tr></thead>`;
     const colY={},colYI={};tipos.forEach(t=>colY[t]=0);REF_COLS.forEach(c=>colYI[c]=0);let yTot=0;let body='';
     yMonths.forEach(mo=>{let rowTot=0;let tds='';tipos.forEach(t=>{const v=grid[mo][t];rowTot+=v;colY[t]+=v;tds+=mkCell(v);});
       let itds='';REF_COLS.forEach(c=>{const v=gridI[mo][c];colYI[c]+=v;itds+=mkInfoCell(v);});
-      yTot+=rowTot;body+=`<tr><td>${mlabel(mo)}</td>${tds}${itds}${mkCell(rowTot)}</tr>`;});
+      yTot+=rowTot;body+=`<tr><td>${mlabel(mo)}</td>${mkCell(rowTot)}${tds}${itds}</tr>`;});
     const colG={},colGI={};tipos.forEach(t=>colG[t]=0);REF_COLS.forEach(c=>colGI[c]=0);
     monthsSet.forEach(mo=>{tipos.forEach(t=>colG[t]+=grid[mo][t]);REF_COLS.forEach(c=>colGI[c]+=gridI[mo][c]);});
-    const footY=`<tr style="font-weight:700"><td>Totale ${selYear}</td>${tipos.map(t=>mkCell(colY[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colYI[c])}</td>`).join('')}${mkCell(yTot)}</tr>`;
-    const footG=`<tr style="font-weight:700"><td style="color:var(--green)">Grand Totale</td>${tipos.map(t=>mkCell(colG[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colGI[c])}</td>`).join('')}${mkCell(tot)}</tr>`;
+    const footY=`<tr style="font-weight:700"><td>Totale ${selYear}</td>${mkCell(yTot)}${tipos.map(t=>mkCell(colY[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colYI[c])}</td>`).join('')}</tr>`;
+    const footG=`<tr style="font-weight:700"><td style="color:var(--green)">Grand Totale</td>${mkCell(tot)}${tipos.map(t=>mkCell(colG[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colGI[c])}</td>`).join('')}</tr>`;
     const ncol=tipos.length+REF_COLS.length+2;
     $('monthly-table').innerHTML=th+'<tbody>'+(yMonths.length?body:`<tr><td colspan="${ncol}"><span class="note">Nessun dato per ${selYear}.</span></td></tr>`)+footY+footG+'</tbody>';
 
@@ -2600,14 +2603,12 @@
       (years.length?yBody:`<tr><td colspan="3"><span class="note">Nessun dato.</span></td></tr>`)+
       `<tr style="font-weight:700"><td>Totale</td><td class="num">${moves.length}</td><td class="num ${tot>=0?'pos':'neg'}">${fmt(tot)}</td></tr></tbody>`;
 
-    // maggiorate — statistiche e grafici dedicati (solo quelle concluse: vinte o perse)
+    // maggiorate — statistiche e grafici dedicati (profitto solo su quelle concluse: vinte o perse)
     const mgRows=moves.filter(m=>m.type==='Maggiorate'&&m.result);
+    const mgAll=moves.filter(m=>m.type==='Maggiorate');
     const mgProfit=mgRows.reduce((s,m)=>s+profitOf(m),0);
-    const mgStaked=mgRows.reduce((s,m)=>s+(parseFloat(m.stake)||0),0);
     const mgp=$('mg-stat-profit');mgp.textContent=fmt(mgProfit);mgp.className='big '+(mgProfit>=0?'pos':'neg');
-    $('mg-stat-staked').textContent=fmt(mgStaked);
-    $('mg-stat-roi').textContent=mgStaked>0?((mgProfit/mgStaked*100).toFixed(1)+'%'):'—';
-    $('mg-stat-count').textContent=mgRows.length;
+    $('mg-stat-count').textContent=mgAll.length;
     const mgChrono=[...mgRows].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     let mgCum=0;const mgCumData=mgChrono.map(m=>{mgCum+=profitOf(m);
       const d=m.date?new Date(m.date):null;

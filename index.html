@@ -1785,10 +1785,12 @@
   function renderDrafts(){
     const pendingMg=moves.filter(m=>m.type==='Maggiorate'&&!m.result);
     $('drafts-mg-note').style.display=pendingMg.length?'block':'none';
-    $('drafts-mg-list').innerHTML=pendingMg.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
-        <span style="flex:1">${esc(m.date||'—')} · ${esc(m.book||'—')}${m.pid?' · '+esc(m.pid):''} — Punt. ${fmt(parseFloat(m.stake)||0)} @ ${m.quota?String(m.quota).replace('.',','):'–'}</span>
-        <button class="stbtn book" data-dmgwin="${m.uid}">V</button>
-        <button class="stbtn banca" data-dmglose="${m.uid}">P</button>
+    $('drafts-mg-list').innerHTML=pendingMg.map(m=>`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)">
+        <span style="flex:1;min-width:150px">${esc(m.date||'—')} · ${esc(m.book||'—')}${m.pid?' · '+esc(m.pid):''} — Punt. ${fmt(parseFloat(m.stake)||0)} @ ${m.quota?String(m.quota).replace('.',','):'–'}</span>
+        <span style="display:flex;gap:8px;flex-shrink:0">
+          <button class="stbtn book" data-dmgwin="${m.uid}">V</button>
+          <button class="stbtn banca" data-dmglose="${m.uid}">P</button>
+        </span>
       </div>`).join('');
     $('drafts-mg-list').querySelectorAll('[data-dmgwin]').forEach(b=>b.addEventListener('click',()=>{markMaggiorata(b.dataset.dmgwin,'v');renderDrafts();renderDraftsBadge();}));
     $('drafts-mg-list').querySelectorAll('[data-dmglose]').forEach(b=>b.addEventListener('click',()=>{markMaggiorata(b.dataset.dmglose,'p');renderDrafts();renderDraftsBadge();}));

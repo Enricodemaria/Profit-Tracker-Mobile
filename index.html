@@ -109,7 +109,9 @@
     #moves-rows td[data-label="Bonus"]{display:none}
     #moves-rows td[data-label="Profitto"]{grid-column:1/3;grid-row:4;font-family:var(--f-mono);font-size:19px;font-weight:700;margin-top:4px}
     #moves-rows td[data-label="Note"]{grid-column:1/3;grid-row:5;font-size:12px;color:var(--muted)}
-    #moves-rows td[data-label=""]{grid-column:3;grid-row:1/4;align-self:start;justify-self:end}
+    #moves-rows td[data-label=""]{grid-column:3;grid-row:1/4;align-self:start;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;width:64px}
+    #moves-rows td[data-label=""] .stbtn{margin-right:0;min-width:26px;min-height:26px;padding:6px}
+    #moves-rows td[data-label=""] .iconbtn{min-width:26px;min-height:26px;padding:6px;font-size:15px}
   }
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}

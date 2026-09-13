@@ -91,6 +91,25 @@
   .mform{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
   .mform .full{grid-column:1/-1}
   @media(max-width:640px){.mform{grid-template-columns:1fr 1fr}}
+  /* Movimenti su schermo stretto: righe di tabella -> schede leggibili, i dati meno essenziali
+     restano comunque nel modulo di modifica (tocca la scheda per aprirlo). */
+  @media(max-width:680px){
+    #moves table thead{display:none}
+    #moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:3px;padding:13px 14px;margin-bottom:9px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);cursor:pointer}
+    #moves-rows td{border:none;padding:0;font-size:13px;white-space:normal!important;max-width:none!important}
+    #moves-rows td[data-label="Data"]{grid-column:1;grid-row:1;color:var(--dim);font-size:12px}
+    #moves-rows td[data-label="ID"]{grid-column:2;grid-row:1;text-align:right;font-weight:600}
+    #moves-rows td[data-label="Book"]{grid-column:1;grid-row:2;color:var(--muted)}
+    #moves-rows td[data-label="Tipologia"]{grid-column:2;grid-row:2;text-align:right;color:var(--accent);font-size:12px}
+    #moves-rows td[data-label="Gioco"],#moves-rows td[data-label="Info"],#moves-rows td[data-label="Ricaricato"]{display:none}
+    #moves-rows td[data-label="Iniziale"],#moves-rows td[data-label="Finale"]{grid-row:3;font-size:12px;color:var(--dim)}
+    #moves-rows td[data-label="Iniziale"]{grid-column:1}
+    #moves-rows td[data-label="Finale"]{grid-column:2;text-align:right}
+    #moves-rows td[data-label="Bonus"]{display:none}
+    #moves-rows td[data-label="Profitto"]{grid-column:1/3;grid-row:4;font-family:var(--f-mono);font-size:19px;font-weight:700;margin-top:4px}
+    #moves-rows td[data-label="Note"]{grid-column:1/3;grid-row:5;font-size:12px;color:var(--muted)}
+    #moves-rows td[data-label=""]{grid-column:3;grid-row:1/4;align-self:start;justify-self:end}
+  }
   .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
   .pos{color:var(--green)} .neg{color:var(--red)}
@@ -243,14 +262,15 @@
       </div>
     </div>
     <nav class="tabs" id="main-tabs">
-      <button class="tab active" data-tab="calc" data-testid="tab-calc">Calcolatori</button>
-      <button class="tab" data-tab="summary" data-testid="tab-summary">Riepilogo</button>
+      <button class="tab active" data-tab="summary" data-testid="tab-summary">Riepilogo</button>
+      <button class="tab" data-tab="moves" data-testid="tab-moves">Movimenti</button>
+      <button class="tab" data-tab="calc" data-testid="tab-calc">Calcolatori</button>
       <button class="tab" data-tab="setup" data-testid="tab-setup">Setup</button>
     </nav>
   </header>
 
   <!-- ===== CALCOLATORI ===== -->
-  <section id="calc" class="pane">
+  <section id="calc" class="pane hidden">
     <nav class="tabs subtabs" id="calc-subtabs">
       <button class="tab active" data-ctab="pb" data-testid="ctab-pb">Punta / Banca</button>
       <button class="tab" data-ctab="dutch" data-testid="ctab-dutch">Punta / Punta</button>
@@ -634,10 +654,10 @@
   <section id="moves" class="pane hidden">
     <div class="toolbar">
       <button class="btn" id="btnSingle" data-testid="btn-single">+ Movimento singolo</button>
-      <button class="btn blue" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
       <button class="btn" id="btnMaggiorata" data-testid="btn-maggiorata" style="background:var(--amber);color:#1a1400;border-color:var(--amber)">+ Maggiorata</button>
-      <button class="btn ghost" id="btnCsv" data-testid="btn-csv">Esporta CSV</button>
       <button class="btn ghost" id="btnDrafts" data-testid="btn-drafts">Movimenti da completare<span class="badge hidden" id="drafts-badge" data-testid="drafts-badge" style="margin-left:6px"></span></button>
+      <button class="btn blue hidden" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
+      <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv">Esporta CSV</button>
     </div>
     <div class="grid4" style="margin-bottom:18px">
       <div class="card stat"><div class="lbl">Profitto totale</div><div class="big pos" id="s-total" data-testid="s-total">€ 0,00</div></div>
@@ -702,7 +722,7 @@
   </div>
 
   <!-- ===== RIEPILOGO ===== -->
-  <section id="summary" class="pane hidden">
+  <section id="summary" class="pane">
     <div class="grid4" style="margin-bottom:20px">
       <div class="card stat"><div class="lbl">Profitto totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
       <div class="card stat"><div class="lbl">Bonus totale</div><div class="big" id="r-bonus">€ 0,00</div></div>
@@ -1549,14 +1569,14 @@
       const isMg=m.type==='Maggiorate';
       const pending=isMg&&!m.result;
       const tr=document.createElement('tr');tr.className='clickable';
-      tr.innerHTML=`<td>${esc(m.date)}</td><td>${esc(m.pid)}</td><td>${esc(m.book)}</td><td>${esc(m.type)}</td><td>${esc(m.game)}</td><td>${esc(m.info)}</td>`+
-        `<td class="num">${fmt(parseFloat(m.start)||0)}</td>`+
-        `<td class="num">${fmt(parseFloat(m.end)||0)}</td>`+
-        `<td class="num" style="color:var(--amber)">${fmt(parseFloat(m.bonus)||0)}</td>`+
-        `<td class="num"${(parseFloat(m.reload)||0)?' style="color:var(--blue)"':''}>${fmt(parseFloat(m.reload)||0)}</td>`+
-        `<td class="num ${pending?'':(p>=0?'pos':'neg')}">${pending?'in sospeso':fmt(p)}</td>`+
-        `<td style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
-        `<td style="white-space:nowrap">${pending?`<button class="stbtn book" data-mgwin="${m.uid}" title="Segna vinta">V</button><button class="stbtn banca" data-mglose="${m.uid}" title="Segna persa">P</button>`:''}<button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
+      tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td><td data-label="Tipologia">${esc(m.type)}</td><td data-label="Gioco">${esc(m.game)}</td><td data-label="Info">${esc(m.info)}</td>`+
+        `<td class="num" data-label="Iniziale">${fmt(parseFloat(m.start)||0)}</td>`+
+        `<td class="num" data-label="Finale">${fmt(parseFloat(m.end)||0)}</td>`+
+        `<td class="num" data-label="Bonus" style="color:var(--amber)">${fmt(parseFloat(m.bonus)||0)}</td>`+
+        `<td class="num" data-label="Ricaricato"${(parseFloat(m.reload)||0)?' style="color:var(--blue)"':''}>${fmt(parseFloat(m.reload)||0)}</td>`+
+        `<td class="num ${pending?'':(p>=0?'pos':'neg')}" data-label="Profitto">${pending?'in sospeso':fmt(p)}</td>`+
+        `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
+        `<td data-label="" style="white-space:nowrap">${pending?`<button class="stbtn book" data-mgwin="${m.uid}" title="Segna vinta">V</button><button class="stbtn banca" data-mglose="${m.uid}" title="Segna persa">P</button>`:''}<button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();isMg?openMaggiorata(m.uid):openSingle(m.uid);});
       const winBtn=tr.querySelector('[data-mgwin]');if(winBtn)winBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'v');});

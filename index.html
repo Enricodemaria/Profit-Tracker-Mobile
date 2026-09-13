@@ -93,6 +93,7 @@
   @media(max-width:640px){.mform{grid-template-columns:1fr 1fr}}
   /* Movimenti su schermo stretto: righe di tabella -> schede leggibili, i dati meno essenziali
      restano comunque nel modulo di modifica (tocca la scheda per aprirlo). */
+  @media(max-width:360px){.mv-datefield{flex-basis:100%!important;min-width:0!important}}
   @media(max-width:680px){
     #moves table thead{display:none}
     #moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:3px;padding:13px 14px;margin-bottom:9px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);cursor:pointer}
@@ -667,8 +668,8 @@
     </div>
     <div class="card" style="overflow-x:auto">
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-        <div class="field" style="max-width:170px;margin-bottom:0"><label>Da</label><input type="date" id="mv-from" data-testid="mv-from"></div>
-        <div class="field" style="max-width:170px;margin-bottom:0"><label>A</label><input type="date" id="mv-to" data-testid="mv-to"></div>
+        <div class="field mv-datefield" style="flex:1 1 130px;min-width:130px;margin-bottom:0"><label>Da</label><input type="date" id="mv-from" data-testid="mv-from"></div>
+        <div class="field mv-datefield" style="flex:1 1 130px;min-width:130px;margin-bottom:0"><label>A</label><input type="date" id="mv-to" data-testid="mv-to"></div>
         <div class="field" style="max-width:180px;margin-bottom:0"><label>Periodo rapido</label>
           <select id="mv-preset" data-testid="mv-preset">
             <option value="">—</option>

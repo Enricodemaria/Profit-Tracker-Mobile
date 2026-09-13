@@ -1263,7 +1263,9 @@
 <div class="overlay hidden" id="modal-drafts">
   <div class="modal" style="max-width:640px">
     <h3>Movimenti da completare</h3>
-    <p class="sub">Movimenti singoli o multipli messi in pausa: riprendili per finirli, solo allora entrano nell'elenco Movimenti.</p>
+    <p class="sub" id="drafts-mg-note" style="display:none">Maggiorate ancora senza esito: segnale Vinta o Persa direttamente da qui.</p>
+    <div id="drafts-mg-list" data-testid="drafts-mg-list"></div>
+    <p class="sub" style="margin-top:14px">Movimenti singoli o multipli messi in pausa: riprendili per finirli, solo allora entrano nell'elenco Movimenti.</p>
     <div id="drafts-list" data-testid="drafts-list"></div>
     <p class="note" id="drafts-empty">Nessun movimento in pausa.</p>
     <div class="modal-actions">
@@ -1555,7 +1557,7 @@
     const rec={date:val('mg-date'),book:val('mg-book'),pid:'',type:'Maggiorate',game:'Sport',info:'',notes:val('mg-notes'),start:'0',reload:'',end,bonus,stake:val('mg-stake'),quota:val('mg-quota'),result};
     if(mgEditUid){const i=moves.findIndex(x=>x.uid===mgEditUid);if(i>=0)moves[i]={...moves[i],...rec};}
     else {rec.uid=uid();moves.unshift(rec);}
-    save();renderMoves();$('modal-maggiorate').classList.add('hidden');
+    save();renderMoves();renderDraftsBadge();$('modal-maggiorate').classList.add('hidden');
   });
   function renderMoves(){
     const tb=$('moves-rows');tb.innerHTML='';
@@ -1583,8 +1585,8 @@
         `<td data-label="" style="white-space:nowrap">${pending?`<button class="stbtn book" data-mgwin="${m.uid}" title="Segna vinta">V</button><button class="stbtn banca" data-mglose="${m.uid}" title="Segna persa">P</button>`:''}<button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();isMg?openMaggiorata(m.uid):openSingle(m.uid);});
-      const winBtn=tr.querySelector('[data-mgwin]');if(winBtn)winBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'v');});
-      const loseBtn=tr.querySelector('[data-mglose]');if(loseBtn)loseBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'p');});
+      const winBtn=tr.querySelector('[data-mgwin]');if(winBtn)winBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'v');renderDraftsBadge();});
+      const loseBtn=tr.querySelector('[data-mglose]');if(loseBtn)loseBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'p');renderDraftsBadge();});
       tr.addEventListener('click',()=>isMg?openMaggiorata(m.uid):openSingle(m.uid));
       tb.appendChild(tr);
     });
@@ -1756,7 +1758,8 @@
 
   function renderDraftsBadge(){
     const b=$('drafts-badge');
-    if(drafts.length){b.textContent=drafts.length;b.classList.remove('hidden');}
+    const n=drafts.length+moves.filter(m=>m.type==='Maggiorate'&&!m.result).length;
+    if(n){b.textContent=n;b.classList.remove('hidden');}
     else b.classList.add('hidden');
   }
   function resumeSingleDraft(draftId){
@@ -1780,6 +1783,15 @@
     $('modal-single').classList.remove('hidden');
   }
   function renderDrafts(){
+    const pendingMg=moves.filter(m=>m.type==='Maggiorate'&&!m.result);
+    $('drafts-mg-note').style.display=pendingMg.length?'block':'none';
+    $('drafts-mg-list').innerHTML=pendingMg.map(m=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)">
+        <span style="flex:1">${esc(m.date||'—')} · ${esc(m.book||'—')}${m.pid?' · '+esc(m.pid):''} — Punt. ${fmt(parseFloat(m.stake)||0)} @ ${m.quota?String(m.quota).replace('.',','):'–'}</span>
+        <button class="stbtn book" data-dmgwin="${m.uid}">V</button>
+        <button class="stbtn banca" data-dmglose="${m.uid}">P</button>
+      </div>`).join('');
+    $('drafts-mg-list').querySelectorAll('[data-dmgwin]').forEach(b=>b.addEventListener('click',()=>{markMaggiorata(b.dataset.dmgwin,'v');renderDrafts();renderDraftsBadge();}));
+    $('drafts-mg-list').querySelectorAll('[data-dmglose]').forEach(b=>b.addEventListener('click',()=>{markMaggiorata(b.dataset.dmglose,'p');renderDrafts();renderDraftsBadge();}));
     const list=$('drafts-list');
     $('drafts-empty').style.display=drafts.length?'none':'block';
     list.innerHTML=drafts.map(d=>{

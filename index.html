@@ -1303,6 +1303,14 @@
   const val=id=>$(id).value;
   const numv=v=>{const n=parseFloat((v||'').toString().replace(',','.'));return isNaN(n)?0:n;};
   const fmt=x=>{if(!isFinite(x))x=0;return (x<0?'-':'')+'€ '+Math.abs(x).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});};
+  const fmtInt=x=>{if(!isFinite(x))x=0;return (x<0?'-':'')+'€ '+Math.round(Math.abs(x)).toLocaleString('it-IT');};
+  function autoFitBig(el){
+    el.style.fontSize='';
+    const parent=el.parentElement;if(!parent)return;
+    let size=parseFloat(getComputedStyle(el).fontSize);
+    let guard=0;
+    while(el.scrollWidth>parent.clientWidth-4&&size>13&&guard<20){size-=1;el.style.fontSize=size+'px';guard++;}
+  }
   function copyText(txt){
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).catch(()=>fallbackCopy(txt));}
     else fallbackCopy(txt);
@@ -2581,9 +2589,9 @@
     const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
     const totYear=moves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
     const totMonth=moves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
-    const rt=$('r-total');rt.textContent=fmt(tot);rt.className='big '+(tot>=0?'pos':'neg');
-    const ry=$('r-year');ry.textContent=fmt(totYear);ry.className='big '+(totYear>=0?'pos':'neg');
-    const rm=$('r-month');rm.textContent=fmt(totMonth);rm.className='big '+(totMonth>=0?'pos':'neg');
+    const rt=$('r-total');rt.textContent=fmtInt(tot);rt.className='big '+(tot>=0?'pos':'neg');autoFitBig(rt);
+    const ry=$('r-year');ry.textContent=fmtInt(totYear);ry.className='big '+(totYear>=0?'pos':'neg');autoFitBig(ry);
+    const rm=$('r-month');rm.textContent=fmtInt(totMonth);rm.className='big '+(totMonth>=0?'pos':'neg');autoFitBig(rm);
 
     // monthly by type: "Maggiorate" è ormai una tipologia vera, contata come le altre;
     // Fun bonus resta solo di riferimento, non sommato

@@ -50,7 +50,8 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  @media(max-width:820px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+  @media(max-width:820px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}
+    #summary-stats-row>:nth-child(3):last-child{grid-column:1/-1}}
   .stat{text-align:center}
   .stat .lbl{font-size:12px;color:var(--muted);font-weight:500}
   .stat .big{font-family:var(--f-mono);font-size:26px;font-weight:600;color:var(--green);margin-top:6px}
@@ -728,7 +729,7 @@
 
   <!-- ===== RIEPILOGO ===== -->
   <section id="summary" class="pane">
-    <div class="grid4" style="margin-bottom:20px">
+    <div class="grid4" id="summary-stats-row" style="margin-bottom:20px">
       <div class="card stat"><div class="lbl">Profitto totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
       <div class="card stat"><div class="lbl">Profitto anno in corso</div><div class="big" id="r-year" data-testid="r-year">€ 0,00</div></div>
       <div class="card stat"><div class="lbl">Profitto mese in corso</div><div class="big" id="r-month" data-testid="r-month">€ 0,00</div></div>

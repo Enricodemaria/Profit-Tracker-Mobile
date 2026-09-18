@@ -758,6 +758,8 @@
         <div class="grid4" style="margin-bottom:14px">
           <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="mg-stat-profit" data-testid="mg-stat-profit">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Totale bet</div><div class="big" id="mg-stat-count" data-testid="mg-stat-count">0</div></div>
+          <div class="mgmini"><div class="lbl">ROI</div><div class="big" id="mg-stat-roi" data-testid="mg-stat-roi">—</div></div>
+          <div class="mgmini"><div class="lbl">Puntata media</div><div class="big" id="mg-stat-avgstake" data-testid="mg-stat-avgstake">€ 0,00</div></div>
         </div>
         <div class="chart-title" style="font-size:11.5px;color:var(--dim)">Andamento profitto cumulato</div>
         <div id="mg-chart-cum"></div>
@@ -2642,6 +2644,11 @@
     const mgProfit=mgRows.reduce((s,m)=>s+profitOf(m),0);
     const mgp=$('mg-stat-profit');mgp.textContent=fmt(mgProfit);mgp.className='big '+(mgProfit>=0?'pos':'neg');
     $('mg-stat-count').textContent=mgAll.length;
+    const mgStaked=mgRows.reduce((s,m)=>s+(numParse(m.stake)||0),0);
+    $('mg-stat-roi').textContent=mgStaked>0?((mgProfit/mgStaked*100).toFixed(1)+'%'):'—';
+    const mgAvgStakeBase=mgAll.filter(m=>numParse(m.stake)>0);
+    const mgAvgStake=mgAvgStakeBase.length?mgAvgStakeBase.reduce((s,m)=>s+numParse(m.stake),0)/mgAvgStakeBase.length:0;
+    $('mg-stat-avgstake').textContent=fmt(mgAvgStake);
     const mgChrono=[...mgRows].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     let mgCum=0;const mgCumData=mgChrono.map(m=>{mgCum+=profitOf(m);
       const d=m.date?new Date(m.date):null;

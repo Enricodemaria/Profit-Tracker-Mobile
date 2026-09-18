@@ -666,10 +666,10 @@
       <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv">Esporta CSV</button>
     </div>
     <div class="grid4" style="margin-bottom:18px">
-      <div class="card stat"><div class="lbl">Profitto totale</div><div class="big pos" id="s-total" data-testid="s-total">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Movimenti</div><div class="big" id="s-count" data-testid="s-count">0</div></div>
-      <div class="card stat"><div class="lbl">Guadagno di oggi</div><div class="big pos" id="s-today" data-testid="s-today">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Profitto medio</div><div class="big" id="s-avg">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Totale</div><div class="big pos" id="s-total" data-testid="s-total">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Anno in corso</div><div class="big" id="s-year" data-testid="s-year">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Mese in corso</div><div class="big" id="s-month" data-testid="s-month">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Oggi</div><div class="big pos" id="s-today" data-testid="s-today">€ 0,00</div></div>
     </div>
     <div class="card" style="overflow-x:auto">
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px">
@@ -1605,11 +1605,16 @@
     $('mv-filter-count').textContent=(from||to)?`${displayed.length} di ${moves.length} movimenti`:'';
 
     const t=$('s-total');t.textContent=fmt(tot);t.className='big '+(Math.round(tot*100)>=0?'pos':'neg');
-    $('s-count').textContent=moves.length;
+    const now=new Date();
+    const curYear=String(now.getFullYear());
+    const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const totYear=moves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
+    const totMonth=moves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
+    const sy=$('s-year');sy.textContent=fmt(totYear);sy.className='big '+(totYear>=0?'pos':'neg');
+    const sm=$('s-month');sm.textContent=fmt(totMonth);sm.className='big '+(totMonth>=0?'pos':'neg');
     const today=new Date().toISOString().slice(0,10);
     const todayGain=moves.filter(m=>m.date===today).reduce((s,m)=>s+profitOf(m),0);
     const td=$('s-today');td.textContent=fmt(todayGain);td.className='big '+(Math.round(todayGain*100)>=0?'pos':'neg');
-    $('s-avg').textContent=fmt(moves.length?tot/moves.length:0);
   }
   $('mv-from').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});
   $('mv-to').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});

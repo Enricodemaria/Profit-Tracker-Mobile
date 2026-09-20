@@ -794,6 +794,15 @@
             <option value="ytd">Da inizio anno (YTD)</option>
           </select>
         </div>
+        <div class="field" style="max-width:180px;margin-bottom:0"><label>Tipologia</label>
+          <select id="mv-tipo" data-testid="mv-tipo"><option value="">Tutte</option></select>
+        </div>
+        <div class="field" style="max-width:180px;margin-bottom:0"><label>Book</label>
+          <select id="mv-book" data-testid="mv-book"><option value="">Tutti</option></select>
+        </div>
+        <div class="field" style="max-width:220px;margin-bottom:0"><label>Cerca</label>
+          <input type="text" id="mv-search" data-testid="mv-search" placeholder="ID, note, gioco...">
+        </div>
         <button class="btn ghost" id="mv-filter-clear" data-testid="mv-filter-clear">Rimuovi filtro</button>
         <span class="note" id="mv-filter-count" style="margin:0"></span>
       </div>
@@ -1645,6 +1654,10 @@
     ['f-type','b-type','rec-type'].forEach(id=>fillSelect($(id),tipos));
     ['f-game','b-game','rec-game'].forEach(id=>fillSelect($(id),games));
     ['f-info','b-info'].forEach(id=>fillSelect($(id),INFOS));
+    const curTipo=$('mv-tipo').value,curBook=$('mv-book').value;
+    $('mv-tipo').innerHTML='<option value="">Tutte</option>'+tipos.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+    $('mv-book').innerHTML='<option value="">Tutti</option>'+books.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+    $('mv-tipo').value=curTipo;$('mv-book').value=curBook;
   }
 
   // ---- movimenti table ----
@@ -1688,7 +1701,13 @@
     moves.forEach(m=>{const p=profitOf(m);tot+=p;btot+=(m.type==='Maggiorate'&&!m.result)?0:(numParse(m.bonus)||0);});
 
     const from=val('mv-from'),to=val('mv-to');
-    let displayed=moves.filter(m=>(!from||m.date>=from)&&(!to||m.date<=to));
+    const fTipo=val('mv-tipo'),fBook=val('mv-book'),fSearch=val('mv-search').trim().toLowerCase();
+    let displayed=moves.filter(m=>
+      (!from||m.date>=from)&&(!to||m.date<=to)&&
+      (!fTipo||m.type===fTipo)&&
+      (!fBook||m.book===fBook)&&
+      (!fSearch||[m.pid,m.book,m.type,m.game,m.info,m.notes].some(v=>String(v||'').toLowerCase().includes(fSearch)))
+    );
     displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
     displayed.forEach(m=>{
@@ -1714,7 +1733,7 @@
       tb.appendChild(tr);
     });
     $('moves-empty').style.display=displayed.length?'none':'block';
-    $('mv-filter-count').textContent=(from||to)?`${displayed.length} di ${moves.length} movimenti`:'';
+    $('mv-filter-count').textContent=(from||to||fTipo||fBook||fSearch)?`${displayed.length} di ${moves.length} movimenti`:'';
 
     const t=$('s-total');t.textContent=fmt(tot);t.className='big '+(Math.round(tot*100)>=0?'pos':'neg');
     const now=new Date();
@@ -1730,7 +1749,10 @@
   }
   $('mv-from').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});
   $('mv-to').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});
-  $('mv-filter-clear').addEventListener('click',()=>{$('mv-from').value='';$('mv-to').value='';$('mv-preset').value='';renderMoves();});
+  $('mv-filter-clear').addEventListener('click',()=>{$('mv-from').value='';$('mv-to').value='';$('mv-preset').value='';$('mv-tipo').value='';$('mv-book').value='';$('mv-search').value='';renderMoves();});
+  $('mv-tipo').addEventListener('change',renderMoves);
+  $('mv-book').addEventListener('change',renderMoves);
+  $('mv-search').addEventListener('input',renderMoves);
   function isoDate(d){const pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
   $('mv-preset').addEventListener('change',()=>{
     const p=val('mv-preset');

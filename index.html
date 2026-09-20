@@ -2784,12 +2784,14 @@
     const mgAvgStakeBase=mgAll.filter(m=>numParse(m.stake)>0);
     const mgAvgStake=mgAvgStakeBase.length?mgAvgStakeBase.reduce((s,m)=>s+numParse(m.stake),0)/mgAvgStakeBase.length:0;
     $('mg-stat-avgstake').textContent=fmt(mgAvgStake);
-    const mgUnits=mgRows.reduce((s,m)=>{
-      if(m.result!=='v')return s-1;
-      let q=numParse(m.quota);
-      if(!q){const stk=numParse(m.stake)||0;if(stk>0)q=profitOf(m)/stk+1;} // quota storica mancante: la ricavo da profitto/puntata invece di contarla come persa
-      return s+(q?q-1:0);
-    },0);
+    const mgWithQuota=mgRows.filter(m=>numParse(m.quota)>0);
+    const mgNoQuota=mgRows.filter(m=>!(numParse(m.quota)>0));
+    const unitsFromQuota=mgWithQuota.reduce((s,m)=>s+(m.result==='v'?numParse(m.quota)-1:-1),0);
+    const noQuotaProfit=mgNoQuota.reduce((s,m)=>s+profitOf(m),0);
+    const noQuotaStakes=mgNoQuota.map(m=>numParse(m.stake)||0).filter(v=>v>0);
+    const noQuotaAvgStake=noQuotaStakes.length?noQuotaStakes.reduce((a,b)=>a+b,0)/noQuotaStakes.length:0;
+    const unitsNoQuota=noQuotaAvgStake>0?noQuotaProfit/noQuotaAvgStake:0;
+    const mgUnits=unitsFromQuota+unitsNoQuota;
     const mgu=$('mg-stat-units');mgu.textContent=(mgUnits>=0?'+':'')+mgUnits.toFixed(2);mgu.className='big '+(mgUnits>=0?'pos':'neg');
     const mgChrono=[...mgRows].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     let mgCum=0;const mgCumData=mgChrono.map(m=>{mgCum+=profitOf(m);

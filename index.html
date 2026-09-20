@@ -2762,7 +2762,12 @@
     const mgAvgStakeBase=mgAll.filter(m=>numParse(m.stake)>0);
     const mgAvgStake=mgAvgStakeBase.length?mgAvgStakeBase.reduce((s,m)=>s+numParse(m.stake),0)/mgAvgStakeBase.length:0;
     $('mg-stat-avgstake').textContent=fmt(mgAvgStake);
-    const mgUnits=mgRows.reduce((s,m)=>s+(m.result==='v'?(numParse(m.quota)||0)-1:-1),0);
+    const mgUnits=mgRows.reduce((s,m)=>{
+      if(m.result!=='v')return s-1;
+      let q=numParse(m.quota);
+      if(!q){const stk=numParse(m.stake)||0;if(stk>0)q=profitOf(m)/stk+1;} // quota storica mancante: la ricavo da profitto/puntata invece di contarla come persa
+      return s+(q?q-1:0);
+    },0);
     const mgu=$('mg-stat-units');mgu.textContent=(mgUnits>=0?'+':'')+mgUnits.toFixed(2);mgu.className='big '+(mgUnits>=0?'pos':'neg');
     const mgChrono=[...mgRows].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     let mgCum=0;const mgCumData=mgChrono.map(m=>{mgCum+=profitOf(m);

@@ -63,6 +63,7 @@
   select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b97ab' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px}
   input:focus,select:focus{border-color:var(--accent);box-shadow:var(--ring)}
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .stat{text-align:center;padding:4px 0}
@@ -109,7 +110,8 @@
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
   .pos{color:var(--green)} .neg{color:var(--red)}
   footer{text-align:center;color:var(--dim);font-size:12px;margin-top:40px}
-  @media(max-width:820px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}}
+  @media(max-width:820px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.grid5{grid-template-columns:1fr 1fr}
+    #mg-stats-row>:nth-child(5):last-child{grid-column:1/-1}}
   @media(max-width:900px){.dragzone{grid-template-columns:1fr}}
   @media(max-width:640px){.mform{grid-template-columns:1fr 1fr}}
   /* tema chiaro */
@@ -861,8 +863,9 @@
       <div class="dragcard" draggable="true" data-chart-id="maggiorate" style="grid-column:1/-1">
         <span class="drag-handle" title="Trascina per riordinare">⠿</span>
         <div class="chart-title">Maggiorate</div>
-        <div class="grid4" style="margin-bottom:14px">
+        <div class="grid5" id="mg-stats-row" style="margin-bottom:14px">
           <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="mg-stat-profit" data-testid="mg-stat-profit">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Mese in corso</div><div class="big" id="mg-stat-month" data-testid="mg-stat-month">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Totale bet</div><div class="big" id="mg-stat-count" data-testid="mg-stat-count">0</div></div>
           <div class="mgmini"><div class="lbl">ROI</div><div class="big" id="mg-stat-roi" data-testid="mg-stat-roi">—</div></div>
           <div class="mgmini"><div class="lbl">Puntata media</div><div class="big" id="mg-stat-avgstake" data-testid="mg-stat-avgstake">€ 0,00</div></div>
@@ -2750,6 +2753,8 @@
     const mgAll=moves.filter(m=>m.type==='Maggiorate');
     const mgProfit=mgRows.reduce((s,m)=>s+profitOf(m),0);
     const mgp=$('mg-stat-profit');mgp.textContent=fmt(mgProfit);mgp.className='big '+(mgProfit>=0?'pos':'neg');
+    const mgProfitMonth=mgRows.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
+    const mgm=$('mg-stat-month');mgm.textContent=fmt(mgProfitMonth);mgm.className='big '+(mgProfitMonth>=0?'pos':'neg');
     $('mg-stat-count').textContent=mgAll.length;
     const mgStaked=mgRows.reduce((s,m)=>s+(numParse(m.stake)||0),0);
     $('mg-stat-roi').textContent=mgStaked>0?((mgProfit/mgStaked*100).toFixed(1)+'%'):'—';

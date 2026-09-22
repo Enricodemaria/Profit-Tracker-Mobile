@@ -66,9 +66,9 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
   .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
-  .rs-overdue-row{background:rgba(240,180,60,.06)}
-  .rs-overdue-row:hover{background:rgba(240,180,60,.1)}
-  .rs-warn-icon{font-size:12px}
+  .rs-overdue-row{background:rgba(240,180,60,.07);border-left:3px solid var(--amber)}
+  .rs-overdue-row:hover{background:rgba(240,180,60,.12)}
+  .rs-warn-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--amber);color:#1a1400;border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .stat{text-align:center;padding:4px 0}
@@ -1487,6 +1487,10 @@
       <div><label>Real Massimo €</label><input class="num" id="rs-realmax" data-testid="rs-realmax" placeholder="0"></div>
       <div><label>Fun %</label><input class="num" id="rs-funpct" data-testid="rs-funpct" placeholder="es. 100"></div>
       <div><label>Fun Massimo €</label><input class="num" id="rs-funmax" data-testid="rs-funmax" placeholder="0"></div>
+      <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="sub" style="margin:0">Stake massimo consigliato — oltre questo, il rischio in più non è coperto da nessuno dei due tetti</span>
+        <b id="rs-stakemax" data-testid="rs-stakemax" style="font-family:var(--f-disp);font-size:18px">—</b>
+      </div>
       <div class="full"><label>Note</label><input id="rs-notes" data-testid="rs-notes" placeholder="note libere..."></div>
     </div>
     <div class="modal-actions">
@@ -1533,6 +1537,10 @@
       <div><label>Real Massimo €</label><input class="num" id="rse-realmax" data-testid="rse-realmax"></div>
       <div><label>Fun %</label><input class="num" id="rse-funpct" data-testid="rse-funpct"></div>
       <div><label>Fun Massimo €</label><input class="num" id="rse-funmax" data-testid="rse-funmax"></div>
+      <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="sub" style="margin:0">Stake massimo consigliato — oltre questo, il rischio in più non è coperto da nessuno dei due tetti</span>
+        <b id="rse-stakemax" data-testid="rse-stakemax" style="font-family:var(--f-disp);font-size:18px">—</b>
+      </div>
       <div><label>Saldo iniziale €</label><input class="num" id="rse-start" data-testid="rse-start"></div>
       <div><label>Saldo finale €</label><input class="num" id="rse-end" data-testid="rse-end"></div>
       <div><label>Bonus Monetizzato €</label><input class="num" id="rse-bonusmon" data-testid="rse-bonusmon" placeholder="lascia vuoto se non ancora noto"></div>
@@ -1989,7 +1997,7 @@
       const overdue=m.scadenza&&m.scadenza<today&&!bmSet;
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
-        `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-icon" title="Scaduta, manca ancora il Bonus Monetizzato">⚠️</span>':''}</td>`+
+        `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Scaduta, manca ancora il Bonus Monetizzato">Da controllare</span>':''}</td>`+
         `<td class="num" data-label="Saldo iniziale">${fmt(numParse(m.start)||0)}</td>`+
         `<td class="num" data-label="Saldo finale">${fmt(numParse(m.end)||0)}</td>`+
         `<td class="num ${att.netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(att.netto)}</td>`+
@@ -2097,6 +2105,17 @@
   $('batch-rows').addEventListener('input',updateBatchTotal);
 
   // ---- rimborso slot: passo 1 + passo 2 (stesso schema dell'inserimento multiplo) ----
+  function computeStakeMax(prefix){
+    const realPct=(numParse(val(prefix+'-realpct'))||0)/100,realMax=numParse(val(prefix+'-realmax'))||0;
+    const funPct=(numParse(val(prefix+'-funpct'))||0)/100,funMax=numParse(val(prefix+'-funmax'))||0;
+    const realThresh=realPct>0?realMax/realPct:0;
+    const funThresh=funPct>0?funMax/funPct:0;
+    const stakeMax=Math.max(realThresh,funThresh);
+    $(prefix+'-stakemax').textContent=stakeMax>0?fmt(stakeMax):'—';
+  }
+  ['rs-realpct','rs-realmax','rs-funpct','rs-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rs')));
+  ['rse-realpct','rse-realmax','rse-funpct','rse-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rse')));
+
   let rsSeq=0;
   function rsAddRow(idLabel,bookName,prefill){
     const tb=$('rs-rows'),k=rsSeq++;
@@ -2131,6 +2150,7 @@
     fillSelect($('rs-book'),books.length?books:DEFAULT_BOOKS);
     $('rs-date').value=new Date().toISOString().slice(0,10);
     $('rs-scadenza').value='';$('rs-realpct').value='';$('rs-realmax').value='';$('rs-funpct').value='';$('rs-funmax').value='';$('rs-notes').value='';
+    computeStakeMax('rs');
     $('modal-rs1').classList.remove('hidden');
   });
   $('rs-next').addEventListener('click',()=>{
@@ -2179,6 +2199,7 @@
     $('rse-end').value=m.end??'';
     $('rse-bonusmon').value=m.rsBonusMon??'';
     $('rse-notes').value=m.notes||'';
+    computeStakeMax('rse');
     $('modal-rs-edit').classList.remove('hidden');
   }
   $('rse-save').addEventListener('click',()=>{

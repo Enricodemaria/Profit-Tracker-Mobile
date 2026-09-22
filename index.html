@@ -65,6 +65,9 @@
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
   .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
   .grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:16px}
+  .rs-overdue-row{background:rgba(240,180,60,.06)}
+  .rs-overdue-row:hover{background:rgba(240,180,60,.1)}
+  .rs-warn-icon{font-size:12px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
   .stat{text-align:center;padding:4px 0}
@@ -344,6 +347,8 @@
     .tab{min-width:auto;flex:1 1 30%;font-size:13px;padding:10px 12px}
     #moves table thead{display:none}
     #moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+    #mg-moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+    #rs-moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
     #moves-rows td{border:none;padding:0;font-size:13px;white-space:normal!important;max-width:none!important}
     #moves-rows td[data-label="Data"]{grid-column:1;grid-row:1;color:var(--dim);font-size:12px}
     #moves-rows td[data-label="ID"]{grid-column:2;grid-row:1;text-align:right;font-weight:600}
@@ -359,6 +364,40 @@
     #moves-rows td[data-label=""]{grid-column:3;grid-row:1/4;align-self:start;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;width:100px}
     #moves-rows td[data-label=""] .stbtn{margin-right:0;min-width:44px;min-height:44px;padding:6px;display:grid;place-items:center}
     #moves-rows td[data-label=""] .iconbtn{min-width:44px;min-height:44px;padding:6px;font-size:16px}
+
+    /* scheda Maggiorate (stesso schema di #moves-rows, senza Tipologia) */
+    #mg-moves-rows td[data-label="Data"]{grid-column:1;grid-row:1;color:var(--dim);font-size:12px}
+    #mg-moves-rows td[data-label="ID"]{grid-column:2;grid-row:1;text-align:right;font-weight:600}
+    #mg-moves-rows td[data-label="Book"]{grid-column:1;grid-row:2;color:var(--muted)}
+    #mg-moves-rows td[data-label="Gioco"],#mg-moves-rows td[data-label="Info"],#mg-moves-rows td[data-label="Ricaricato"]{display:none}
+    #mg-moves-rows td[data-label="Iniziale"],#mg-moves-rows td[data-label="Finale"]{grid-row:3;font-size:12px;color:var(--dim)}
+    #mg-moves-rows td[data-label="Iniziale"]{grid-column:1}
+    #mg-moves-rows td[data-label="Finale"]{grid-column:2;text-align:right}
+    #mg-moves-rows td[data-label="Bonus"]{display:none}
+    #mg-moves-rows td[data-label="Profitto"]{grid-column:1/3;grid-row:4;font-family:var(--f-disp);font-size:21px;font-weight:600;letter-spacing:-.6px;margin-top:5px}
+    #mg-moves-rows td[data-label="Note"]{grid-column:1/3;grid-row:5;font-size:12px;color:var(--muted)}
+    #mg-moves-rows td[data-label=""]{grid-column:3;grid-row:1/4;align-self:start;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;width:100px}
+    #mg-moves-rows td[data-label=""] .stbtn{margin-right:0;min-width:44px;min-height:44px;padding:6px;display:grid;place-items:center}
+    #mg-moves-rows td[data-label=""] .iconbtn{min-width:44px;min-height:44px;padding:6px;font-size:16px}
+
+    /* scheda Rimborso Slot (più campi: usa più righe) */
+    #rs-moves-rows td[data-label="Data"]{grid-column:1;grid-row:1;color:var(--dim);font-size:12px}
+    #rs-moves-rows td[data-label="ID"]{grid-column:2;grid-row:1;text-align:right;font-weight:600}
+    #rs-moves-rows td[data-label="Book"]{grid-column:1;grid-row:2;color:var(--muted)}
+    #rs-moves-rows td[data-label="Scadenza"]{grid-column:2;grid-row:2;text-align:right;color:var(--accent);font-size:12px}
+    #rs-moves-rows td[data-label="Saldo iniziale"],#rs-moves-rows td[data-label="Saldo finale"]{grid-row:3;font-size:12px;color:var(--dim)}
+    #rs-moves-rows td[data-label="Saldo iniziale"]{grid-column:1}
+    #rs-moves-rows td[data-label="Saldo finale"]{grid-column:2;text-align:right}
+    #rs-moves-rows td[data-label="Netto Qual."],#rs-moves-rows td[data-label="Bonus Monetizzato"]{grid-row:4;font-size:12px}
+    #rs-moves-rows td[data-label="Netto Qual."]{grid-column:1}
+    #rs-moves-rows td[data-label="Bonus Monetizzato"]{grid-column:2;text-align:right;color:var(--muted)}
+    #rs-moves-rows td[data-label="Real atteso"],#rs-moves-rows td[data-label="Fun atteso"]{grid-row:5;font-size:11px;color:var(--amber)}
+    #rs-moves-rows td[data-label="Real atteso"]{grid-column:1}
+    #rs-moves-rows td[data-label="Fun atteso"]{grid-column:2;text-align:right}
+    #rs-moves-rows td[data-label="Profitto"]{grid-column:1/3;grid-row:6;font-family:var(--f-disp);font-size:21px;font-weight:600;letter-spacing:-.6px;margin-top:5px}
+    #rs-moves-rows td[data-label="Note"]{grid-column:1/3;grid-row:7;font-size:12px;color:var(--muted)}
+    #rs-moves-rows td[data-label=""]{grid-column:3;grid-row:1/6;align-self:start;display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;width:100px}
+    #rs-moves-rows td[data-label=""] .iconbtn{min-width:44px;min-height:44px;padding:6px;font-size:16px}
   }
 </style>
 </head>
@@ -769,6 +808,7 @@
     <div class="toolbar">
       <button class="btn" id="btnSingle" data-testid="btn-single">+ Movimento singolo</button>
       <button class="btn" id="btnMaggiorata" data-testid="btn-maggiorata" style="background:var(--amber);color:#1a1400;border-color:var(--amber)">+ Maggiorata</button>
+      <button class="btn" id="btnRimborso" data-testid="btn-rimborso" style="background:var(--blue);color:#fff;border-color:var(--blue)">+ Rimborso Slot</button>
       <button class="btn ghost" id="btnDrafts" data-testid="btn-drafts">Movimenti da completare<span class="badge hidden" id="drafts-badge" data-testid="drafts-badge" style="margin-left:6px"></span></button>
       <button class="btn blue hidden" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
       <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv">Esporta CSV</button>
@@ -779,6 +819,13 @@
       <div class="card stat"><div class="lbl">Mese in corso</div><div class="big" id="s-month" data-testid="s-month">€ 0,00</div></div>
       <div class="card stat"><div class="lbl">Oggi</div><div class="big pos" id="s-today" data-testid="s-today">€ 0,00</div></div>
     </div>
+
+    <nav class="tabs subtabs" id="mv-subtabs">
+      <button class="tab active" data-mtab="matched" data-testid="mtab-matched">Matched Betting</button>
+      <button class="tab" data-mtab="maggiorate" data-testid="mtab-maggiorate">Maggiorate</button>
+      <button class="tab" data-mtab="rimborso" data-testid="mtab-rimborso">Rimborso Slot</button>
+    </nav>
+
     <div class="card" style="overflow-x:auto">
       <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px">
         <div class="field mv-datefield" style="flex:1 1 130px;min-width:130px;margin-bottom:0"><label>Da</label><input type="date" id="mv-from" data-testid="mv-from"></div>
@@ -794,7 +841,7 @@
             <option value="ytd">Da inizio anno (YTD)</option>
           </select>
         </div>
-        <div class="field" style="max-width:180px;margin-bottom:0"><label>Tipologia</label>
+        <div class="field" style="max-width:180px;margin-bottom:0" id="mv-tipo-field"><label>Tipologia</label>
           <select id="mv-tipo" data-testid="mv-tipo"><option value="">Tutte</option></select>
         </div>
         <div class="field" style="max-width:180px;margin-bottom:0"><label>Book</label>
@@ -806,14 +853,41 @@
         <button class="btn ghost" id="mv-filter-clear" data-testid="mv-filter-clear">Rimuovi filtro</button>
         <span class="note" id="mv-filter-count" style="margin:0"></span>
       </div>
-      <table>
-        <thead><tr>
-          <th>Data</th><th>ID</th><th>Book</th><th>Tipologia</th><th>Gioco</th><th>Info</th>
-          <th class="num">Iniziale</th><th class="num">Finale</th><th class="num">Bonus</th><th class="num">Ricaricato</th><th class="num">Profitto</th><th>Note</th><th></th>
-        </tr></thead>
-        <tbody id="moves-rows" data-testid="moves-rows"></tbody>
-      </table>
-      <p class="note" id="moves-empty" style="display: block;">Nessun movimento. Aggiungine uno con i pulsanti qui sopra.</p>
+
+      <div id="mv-pane-matched" class="mpane">
+        <table>
+          <thead><tr>
+            <th>Data</th><th>ID</th><th>Book</th><th>Tipologia</th><th>Gioco</th><th>Info</th>
+            <th class="num">Iniziale</th><th class="num">Finale</th><th class="num">Bonus</th><th class="num">Ricaricato</th><th class="num">Profitto</th><th>Note</th><th></th>
+          </tr></thead>
+          <tbody id="moves-rows" data-testid="moves-rows"></tbody>
+        </table>
+        <p class="note" id="moves-empty">Nessun movimento. Aggiungine uno con i pulsanti qui sopra.</p>
+      </div>
+
+      <div id="mv-pane-maggiorate" class="mpane hidden">
+        <table>
+          <thead><tr>
+            <th>Data</th><th>ID</th><th>Book</th><th>Gioco</th><th>Info</th>
+            <th class="num">Iniziale</th><th class="num">Finale</th><th class="num">Bonus</th><th class="num">Ricaricato</th><th class="num">Profitto</th><th>Note</th><th></th>
+          </tr></thead>
+          <tbody id="mg-moves-rows" data-testid="mg-moves-rows"></tbody>
+        </table>
+        <p class="note hidden" id="mg-moves-empty">Nessuna maggiorata. Aggiungine una con "+ Maggiorata" qui sopra.</p>
+      </div>
+
+      <div id="mv-pane-rimborso" class="mpane hidden">
+        <p class="sub" style="margin-top:0">Le righe con scadenza già passata e senza Bonus Monetizzato ancora inserito salgono in cima, come promemoria.</p>
+        <table>
+          <thead><tr>
+            <th>Data</th><th>ID</th><th>Book</th><th>Scadenza</th>
+            <th class="num">Saldo iniziale</th><th class="num">Saldo finale</th><th class="num">Netto Qual.</th>
+            <th class="num">Real atteso</th><th class="num">Fun atteso</th><th class="num">Bonus Monetizzato</th><th class="num">Profitto</th><th>Note</th><th></th>
+          </tr></thead>
+          <tbody id="rs-moves-rows" data-testid="rs-moves-rows"></tbody>
+        </table>
+        <p class="note hidden" id="rs-moves-empty">Nessun Rimborso Slot. Aggiungine uno con "+ Rimborso Slot" qui sopra.</p>
+      </div>
     </div>
   </section>
 
@@ -847,18 +921,25 @@
   <!-- ===== RIEPILOGO ===== -->
   <section id="summary" class="pane">
     <div class="grid4" id="summary-stats-row" style="margin-bottom:20px">
-      <div class="card stat"><div class="lbl">Profitto totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Profitto anno in corso</div><div class="big" id="r-year" data-testid="r-year">€ 0,00</div></div>
-      <div class="card stat"><div class="lbl">Profitto mese in corso</div><div class="big" id="r-month" data-testid="r-month">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Matched Betting</div><div class="big" id="r-mb" data-testid="r-mb">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Maggiorate</div><div class="big" id="r-magg" data-testid="r-magg">€ 0,00</div></div>
+      <div class="card stat"><div class="lbl">Rimborso Slot</div><div class="big" id="r-rs" data-testid="r-rs">€ 0,00</div></div>
     </div>
 
     <div class="card" style="margin-bottom:20px;overflow-x:auto;padding-left:14px;padding-right:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <h2><span class="dot"></span>Totali mensili per tipologia</h2>
+        <h2><span class="dot"></span>Totali mensili</h2>
         <select id="mt-year" data-testid="mt-year" style="max-width:120px"></select>
       </div>
-      <p class="sub">Profitto per mese e tipologia dell'anno selezionato. <b>*</b> Fun bonus resta solo di riferimento, non viene sommato nel Totale.</p>
+      <p class="sub">Profitto per mese, diviso nelle 3 macro-categorie.</p>
       <table id="monthly-table" data-testid="monthly-table"></table>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;overflow-x:auto;padding-left:14px;padding-right:14px">
+      <h2><span class="dot"></span>Dettaglio Matched Betting</h2>
+      <p class="sub">Le tipologie che compongono "Matched Betting" nella tabella sopra. <b>*</b> Fun bonus resta solo di riferimento, non viene sommato nel Totale.</p>
+      <table id="monthly-detail-table" data-testid="monthly-detail-table"></table>
     </div>
 
     <div class="card" style="margin-bottom:20px">
@@ -882,6 +963,16 @@
         </div>
         <div class="chart-title" style="font-size:11.5px;color:var(--dim)">Andamento profitto cumulato</div>
         <div id="mg-chart-cum"></div>
+      </div>
+      <div class="dragcard" draggable="true" data-chart-id="rimborso" style="grid-column:1/-1">
+        <span class="drag-handle" title="Trascina per riordinare">⠿</span>
+        <div class="chart-title">Rimborso Slot</div>
+        <div class="grid4" style="margin-bottom:0">
+          <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="rs-stat-profit" data-testid="rs-stat-profit">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Totale promo</div><div class="big" id="rs-stat-count" data-testid="rs-stat-count">0</div></div>
+          <div class="mgmini"><div class="lbl">Real da ricevere</div><div class="big" id="rs-stat-real" data-testid="rs-stat-real">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Fun da ricevere</div><div class="big" id="rs-stat-fun" data-testid="rs-stat-fun">€ 0,00</div></div>
+        </div>
       </div>
       <div class="dragcard" draggable="true" data-chart-id="month"><span class="drag-handle" title="Trascina per riordinare">⠿</span><div class="chart-title">Profitto per mese</div><div id="chart-month"></div></div>
       <div class="dragcard" draggable="true" data-chart-id="cum"><span class="drag-handle" title="Trascina per riordinare">⠿</span><div class="chart-title">Profitto cumulato</div><div id="chart-cum"></div></div>
@@ -1381,6 +1472,78 @@
   </div>
 </div>
 
+<!-- ===== MODAL: rimborso slot step 1 ===== -->
+<div class="overlay hidden" id="modal-rs1">
+  <div class="modal">
+    <h3>Rimborso Slot — Passo 1</h3>
+    <p class="sub">Parametri della promo, uguali per tutte le ID che la giocano. Al passo 2 scegli quali ID e inserisci i saldi di ognuna.</p>
+    <div class="mform">
+      <div><label>Data</label><input type="date" id="rs-date" data-testid="rs-date"></div>
+      <div><label>Book</label><select id="rs-book" data-testid="rs-book"></select></div>
+      <div><label>Scadenza</label><input type="date" id="rs-scadenza" data-testid="rs-scadenza"></div>
+      <div></div>
+      <div><label>Real %</label><input class="num" id="rs-realpct" data-testid="rs-realpct" placeholder="es. 10"></div>
+      <div><label>Real Massimo €</label><input class="num" id="rs-realmax" data-testid="rs-realmax" placeholder="0"></div>
+      <div><label>Fun %</label><input class="num" id="rs-funpct" data-testid="rs-funpct" placeholder="es. 100"></div>
+      <div><label>Fun Massimo €</label><input class="num" id="rs-funmax" data-testid="rs-funmax" placeholder="0"></div>
+      <div class="full"><label>Note</label><input id="rs-notes" data-testid="rs-notes" placeholder="note libere..."></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-rs1">Annulla</button>
+      <button class="btn blue" id="rs-next" data-testid="rs-next">Avanti →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: rimborso slot step 2 ===== -->
+<div class="overlay hidden" id="modal-rs2">
+  <div class="modal" style="max-width:900px">
+    <h3>Rimborso Slot — Passo 2</h3>
+    <p class="sub" id="rs-summary"></p>
+    <p class="sub hidden" id="rs-empty" style="color:var(--amber)">Nessuna ID ha questo book associato in anagrafica. Usa "+ Aggiungi riga" per inserirne una manualmente.</p>
+    <div style="overflow-x:auto;max-height:52vh;overflow-y:auto">
+      <table>
+        <thead><tr><th>ID</th><th>Book</th><th class="num">Saldo iniziale</th><th class="num">Saldo finale</th><th class="num">Bonus Monetizzato</th><th></th></tr></thead>
+        <tbody id="rs-rows" data-testid="rs-rows"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <button class="btn ghost" id="rs-addrow" data-testid="rs-addrow">+ Aggiungi riga</button>
+      <span class="sub" style="margin:0">Profitto totale: <b id="rs-total" data-testid="rs-total" class="pos">€ 0,00</b></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-rs2">Annulla</button>
+      <button class="btn ghost" id="rs-back">← Indietro</button>
+      <button class="btn" id="rs-save" data-testid="rs-save">Salva movimenti</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: rimborso slot — modifica singola riga ===== -->
+<div class="overlay hidden" id="modal-rs-edit">
+  <div class="modal">
+    <h3>Modifica Rimborso Slot</h3>
+    <div class="mform">
+      <div><label>Data</label><input type="date" id="rse-date" data-testid="rse-date"></div>
+      <div><label>ID</label><select id="rse-id" data-testid="rse-id"></select></div>
+      <div><label>Book</label><select id="rse-book" data-testid="rse-book"></select></div>
+      <div><label>Scadenza</label><input type="date" id="rse-scadenza" data-testid="rse-scadenza"></div>
+      <div><label>Real %</label><input class="num" id="rse-realpct" data-testid="rse-realpct"></div>
+      <div><label>Real Massimo €</label><input class="num" id="rse-realmax" data-testid="rse-realmax"></div>
+      <div><label>Fun %</label><input class="num" id="rse-funpct" data-testid="rse-funpct"></div>
+      <div><label>Fun Massimo €</label><input class="num" id="rse-funmax" data-testid="rse-funmax"></div>
+      <div><label>Saldo iniziale €</label><input class="num" id="rse-start" data-testid="rse-start"></div>
+      <div><label>Saldo finale €</label><input class="num" id="rse-end" data-testid="rse-end"></div>
+      <div><label>Bonus Monetizzato €</label><input class="num" id="rse-bonusmon" data-testid="rse-bonusmon" placeholder="lascia vuoto se non ancora noto"></div>
+      <div class="full"><label>Note</label><input id="rse-notes" data-testid="rse-notes"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-rs-edit">Annulla</button>
+      <button class="btn" id="rse-save" data-testid="rse-save">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: movimenti da completare ===== -->
 <div class="overlay hidden" id="modal-drafts">
   <div class="modal" style="max-width:640px">
@@ -1615,7 +1778,22 @@
     $('rec-desc').value='';$('rec-amount').value='';$('rec-start').value='';
     save();runRecurring();renderRecurring();renderMoves();
   });
-  const profitOf=m=>{if(m.type==='Maggiorate'&&!m.result)return 0;return (numParse(m.end)||0)-(numParse(m.start)||0)-(numParse(m.reload)||0)+(numParse(m.bonus)||0);};
+  const profitOf=m=>{
+    if(m.type==='Maggiorate'&&!m.result)return 0;
+    if(m.type==='Rimborso Slot'){
+      const netto=(numParse(m.end)||0)-(numParse(m.start)||0);
+      const bm=(m.rsBonusMon===undefined||m.rsBonusMon==='')?0:(numParse(m.rsBonusMon)||0);
+      return netto+bm;
+    }
+    return (numParse(m.end)||0)-(numParse(m.start)||0)-(numParse(m.reload)||0)+(numParse(m.bonus)||0);
+  };
+  function rimborsoAttesi(m){
+    const netto=(numParse(m.end)||0)-(numParse(m.start)||0);
+    if(netto>=0)return{netto,realAtteso:0,funAtteso:0};
+    const realPct=(numParse(m.rsRealPct)||0)/100,realMax=numParse(m.rsRealMax)||0;
+    const funPct=(numParse(m.rsFunPct)||0)/100,funMax=numParse(m.rsFunMax)||0;
+    return{netto,realAtteso:Math.min(realMax,-netto*realPct),funAtteso:Math.min(funMax,-netto*funPct)};
+  }
 
   // ---- tabs ----
   document.querySelectorAll('#main-tabs .tab').forEach(t=>t.addEventListener('click',()=>{
@@ -1642,6 +1820,16 @@
     document.querySelectorAll('#calc-subtabs .tab').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('#calc .cpane').forEach(p=>p.classList.add('hidden'));
     t.classList.add('active');$(t.dataset.ctab).classList.remove('hidden');
+  }));
+
+  let mvActiveTab='matched';
+  document.querySelectorAll('#mv-subtabs .tab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('#mv-subtabs .tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('#moves .mpane').forEach(p=>p.classList.add('hidden'));
+    t.classList.add('active');mvActiveTab=t.dataset.mtab;
+    $('mv-pane-'+mvActiveTab).classList.remove('hidden');
+    $('mv-tipo-field').classList.toggle('hidden',mvActiveTab!=='matched');
+    renderMoves();
   }));
 
   function fillSelect(el,arr,withEmpty){
@@ -1696,28 +1884,83 @@
     save();renderMoves();renderDraftsBadge();$('modal-maggiorate').classList.add('hidden');
   });
   function renderMoves(){
-    const tb=$('moves-rows');tb.innerHTML='';
-    let tot=0,btot=0;
-    moves.forEach(m=>{const p=profitOf(m);tot+=p;btot+=(m.type==='Maggiorate'&&!m.result)?0:(numParse(m.bonus)||0);});
+    const scopedMoves=mvActiveTab==='matched'?moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot')
+      :mvActiveTab==='maggiorate'?moves.filter(m=>m.type==='Maggiorate')
+      :moves.filter(m=>m.type==='Rimborso Slot');
 
     const from=val('mv-from'),to=val('mv-to');
     const fTipo=val('mv-tipo'),fBook=val('mv-book'),fSearch=val('mv-search').trim().toLowerCase();
-    let displayed=moves.filter(m=>
+    let displayed=scopedMoves.filter(m=>
       (!from||m.date>=from)&&(!to||m.date<=to)&&
       (!fTipo||m.type===fTipo)&&
       (!fBook||m.book===fBook)&&
       (!fSearch||[m.pid,m.book,m.type,m.game,m.info,m.notes].some(v=>String(v||'').toLowerCase().includes(fSearch)))
     );
-    displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
 
+    if(mvActiveTab==='rimborso'){
+      const today=new Date().toISOString().slice(0,10);
+      const needsAttn=m=>m.scadenza&&m.scadenza<today&&(m.rsBonusMon===undefined||m.rsBonusMon==='');
+      displayed=[...displayed].sort((a,b)=>{
+        const an=needsAttn(a),bn=needsAttn(b);
+        if(an!==bn)return an?-1:1;
+        if(an&&bn)return (a.scadenza||'').localeCompare(b.scadenza||'');
+        return (b.date||'').localeCompare(a.date||'');
+      });
+      renderRimborsoRows(displayed);
+    } else if(mvActiveTab==='maggiorate'){
+      displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      renderMaggiorateRows(displayed);
+    } else {
+      displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      renderMatchedRows(displayed);
+    }
+
+    $('mv-filter-count').textContent=(from||to||fTipo||fBook||fSearch)?`${displayed.length} di ${scopedMoves.length} movimenti`:'';
+
+    const tot=scopedMoves.reduce((s,m)=>s+profitOf(m),0);
+    const t=$('s-total');t.textContent=fmt(tot);t.className='big '+(Math.round(tot*100)>=0?'pos':'neg');
+    const now=new Date();
+    const curYear=String(now.getFullYear());
+    const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
+    const totYear=scopedMoves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
+    const totMonth=scopedMoves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
+    const sy=$('s-year');sy.textContent=fmt(totYear);sy.className='big '+(totYear>=0?'pos':'neg');
+    const sm=$('s-month');sm.textContent=fmt(totMonth);sm.className='big '+(totMonth>=0?'pos':'neg');
+    const today=new Date().toISOString().slice(0,10);
+    const todayGain=scopedMoves.filter(m=>m.date===today).reduce((s,m)=>s+profitOf(m),0);
+    const td=$('s-today');td.textContent=fmt(todayGain);td.className='big '+(Math.round(todayGain*100)>=0?'pos':'neg');
+  }
+
+  function renderMatchedRows(displayed){
+    const tb=$('moves-rows');tb.innerHTML='';
     displayed.forEach(m=>{
       const p=profitOf(m);
-      const isMg=m.type==='Maggiorate';
-      const pending=isMg&&!m.result;
       const tr=document.createElement('tr');tr.className='clickable';
-      const iniziale=isMg?`<span style="color:var(--dim);font-size:10px">Punt. </span>${fmt(numParse(m.stake)||0)}`:fmt(numParse(m.start)||0);
-      const finale=isMg?`<span style="color:var(--dim);font-size:10px">Quota </span>${m.quota?String(m.quota).replace('.',','):'–'}`:fmt(numParse(m.end)||0);
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td><td data-label="Tipologia">${esc(m.type)}</td><td data-label="Gioco">${esc(m.game)}</td><td data-label="Info">${esc(m.info)}</td>`+
+        `<td class="num" data-label="Iniziale">${fmt(numParse(m.start)||0)}</td>`+
+        `<td class="num" data-label="Finale">${fmt(numParse(m.end)||0)}</td>`+
+        `<td class="num" data-label="Bonus" style="color:var(--amber)">${fmt(numParse(m.bonus)||0)}</td>`+
+        `<td class="num" data-label="Ricaricato"${(numParse(m.reload)||0)?' style="color:var(--blue)"':''}>${fmt(numParse(m.reload)||0)}</td>`+
+        `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
+        `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
+        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
+      tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
+      tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openSingle(m.uid);});
+      tr.addEventListener('click',()=>openSingle(m.uid));
+      tb.appendChild(tr);
+    });
+    $('moves-empty').classList.toggle('hidden',displayed.length>0);
+  }
+
+  function renderMaggiorateRows(displayed){
+    const tb=$('mg-moves-rows');tb.innerHTML='';
+    displayed.forEach(m=>{
+      const p=profitOf(m);
+      const pending=!m.result;
+      const tr=document.createElement('tr');tr.className='clickable';
+      const iniziale=`<span style="color:var(--dim);font-size:10px">Punt. </span>${fmt(numParse(m.stake)||0)}`;
+      const finale=`<span style="color:var(--dim);font-size:10px">Quota </span>${m.quota?String(m.quota).replace('.',','):'–'}`;
+      tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td><td data-label="Gioco">${esc(m.game)}</td><td data-label="Info">${esc(m.info)}</td>`+
         `<td class="num" data-label="Iniziale">${iniziale}</td>`+
         `<td class="num" data-label="Finale">${finale}</td>`+
         `<td class="num" data-label="Bonus" style="color:var(--amber)">${fmt(numParse(m.bonus)||0)}</td>`+
@@ -1726,26 +1969,41 @@
         `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
         `<td data-label="" style="white-space:nowrap">${pending?`<button class="stbtn book" data-mgwin="${m.uid}" title="Segna vinta">V</button><button class="stbtn banca" data-mglose="${m.uid}" title="Segna persa">P</button>`:''}<button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
-      tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();isMg?openMaggiorata(m.uid):openSingle(m.uid);});
+      tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openMaggiorata(m.uid);});
       const winBtn=tr.querySelector('[data-mgwin]');if(winBtn)winBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'v');renderDraftsBadge();});
       const loseBtn=tr.querySelector('[data-mglose]');if(loseBtn)loseBtn.addEventListener('click',e=>{e.stopPropagation();markMaggiorata(m.uid,'p');renderDraftsBadge();});
-      tr.addEventListener('click',()=>isMg?openMaggiorata(m.uid):openSingle(m.uid));
+      tr.addEventListener('click',()=>openMaggiorata(m.uid));
       tb.appendChild(tr);
     });
-    $('moves-empty').style.display=displayed.length?'none':'block';
-    $('mv-filter-count').textContent=(from||to||fTipo||fBook||fSearch)?`${displayed.length} di ${moves.length} movimenti`:'';
+    $('mg-moves-empty').classList.toggle('hidden',displayed.length>0);
+  }
 
-    const t=$('s-total');t.textContent=fmt(tot);t.className='big '+(Math.round(tot*100)>=0?'pos':'neg');
-    const now=new Date();
-    const curYear=String(now.getFullYear());
-    const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
-    const totYear=moves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
-    const totMonth=moves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
-    const sy=$('s-year');sy.textContent=fmt(totYear);sy.className='big '+(totYear>=0?'pos':'neg');
-    const sm=$('s-month');sm.textContent=fmt(totMonth);sm.className='big '+(totMonth>=0?'pos':'neg');
+  function renderRimborsoRows(displayed){
+    const tb=$('rs-moves-rows');tb.innerHTML='';
     const today=new Date().toISOString().slice(0,10);
-    const todayGain=moves.filter(m=>m.date===today).reduce((s,m)=>s+profitOf(m),0);
-    const td=$('s-today');td.textContent=fmt(todayGain);td.className='big '+(Math.round(todayGain*100)>=0?'pos':'neg');
+    displayed.forEach(m=>{
+      const p=profitOf(m);
+      const att=rimborsoAttesi(m);
+      const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
+      const overdue=m.scadenza&&m.scadenza<today&&!bmSet;
+      const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
+      tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
+        `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-icon" title="Scaduta, manca ancora il Bonus Monetizzato">⚠️</span>':''}</td>`+
+        `<td class="num" data-label="Saldo iniziale">${fmt(numParse(m.start)||0)}</td>`+
+        `<td class="num" data-label="Saldo finale">${fmt(numParse(m.end)||0)}</td>`+
+        `<td class="num ${att.netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(att.netto)}</td>`+
+        `<td class="num" data-label="Real atteso" style="color:var(--amber)">${att.realAtteso?fmt(att.realAtteso):'–'}</td>`+
+        `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${att.funAtteso?fmt(att.funAtteso):'–'}</td>`+
+        `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):'<span class="note" style="margin:0">da inserire</span>'}</td>`+
+        `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
+        `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
+        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
+      tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
+      tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRimborso(m.uid);});
+      tr.addEventListener('click',()=>openRimborso(m.uid));
+      tb.appendChild(tr);
+    });
+    $('rs-moves-empty').classList.toggle('hidden',displayed.length>0);
   }
   $('mv-from').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});
   $('mv-to').addEventListener('change',()=>{$('mv-preset').value='';renderMoves();});
@@ -1836,6 +2094,102 @@
     const el=$('batch-total');el.textContent=fmt(tot);el.className=Math.round(tot*100)>=0?'pos':'neg';
   }
   $('batch-rows').addEventListener('input',updateBatchTotal);
+
+  // ---- rimborso slot: passo 1 + passo 2 (stesso schema dell'inserimento multiplo) ----
+  let rsSeq=0;
+  function rsAddRow(idLabel,bookName,prefill){
+    const tb=$('rs-rows'),k=rsSeq++;
+    const bookList=books.length?books:DEFAULT_BOOKS;
+    const idOpts=ids.map(x=>`<option value="${esc(x.label)}"${x.label===idLabel?' selected':''}>${esc(x.label)}</option>`).join('');
+    const bkOpts=bookList.map(b=>`<option value="${esc(b)}"${b===bookName?' selected':''}>${esc(b)}</option>`).join('');
+    const p=prefill||{};
+    const tr=document.createElement('tr');tr.dataset.k=k;
+    tr.innerHTML=`<td><select id="rt-id-${k}" data-testid="rt-id-${k}" style="min-width:126px">${idOpts}</select></td>`+
+      `<td><select id="rt-book-${k}" data-testid="rt-book-${k}" style="min-width:126px">${bkOpts}</select></td>`+
+      `<td class="num"><input class="num" id="rt-start-${k}" data-testid="rt-start-${k}" placeholder="0" style="max-width:120px" value="${esch(p.start||'')}"/></td>`+
+      `<td class="num"><input class="num" id="rt-end-${k}" data-testid="rt-end-${k}" placeholder="0" style="max-width:120px" value="${esch(p.end||'')}"/></td>`+
+      `<td class="num"><input class="num" id="rt-bonusmon-${k}" data-testid="rt-bonusmon-${k}" placeholder="se già noto" style="max-width:120px" value="${esch(p.rsBonusMon??'')}"/></td>`+
+      `<td style="text-align:center"><button class="btn ghost" data-testid="rt-rm-${k}" style="padding:4px 10px" title="Rimuovi riga">✕</button></td>`;
+    tb.appendChild(tr);
+    tr.querySelector('button').addEventListener('click',()=>{tr.remove();rsEmptyCheck();updateRsTotal();});
+    return tr;
+  }
+  function rsEmptyCheck(){$('rs-empty').classList.toggle('hidden',$('rs-rows').children.length>0);}
+  function updateRsTotal(){
+    let tot=0;
+    [...$('rs-rows').querySelectorAll('tr')].forEach(tr=>{
+      const k=tr.dataset.k;
+      const fake={start:$('rt-start-'+k).value,end:$('rt-end-'+k).value,rsBonusMon:$('rt-bonusmon-'+k).value,type:'Rimborso Slot'};
+      tot+=profitOf(fake);
+    });
+    const el=$('rs-total');el.textContent=fmt(tot);el.className=Math.round(tot*100)>=0?'pos':'neg';
+  }
+  $('rs-rows').addEventListener('input',updateRsTotal);
+  $('btnRimborso').addEventListener('click',()=>{
+    if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}
+    fillSelect($('rs-book'),books.length?books:DEFAULT_BOOKS);
+    $('rs-date').value=new Date().toISOString().slice(0,10);
+    $('rs-scadenza').value='';$('rs-realpct').value='';$('rs-realmax').value='';$('rs-funpct').value='';$('rs-funmax').value='';$('rs-notes').value='';
+    $('modal-rs1').classList.remove('hidden');
+  });
+  $('rs-next').addEventListener('click',()=>{
+    const bk=val('rs-book');
+    $('modal-rs1').classList.add('hidden');
+    $('rs-summary').textContent=`${val('rs-date')} · ${bk}${val('rs-scadenza')?' · scade '+val('rs-scadenza'):''} · Real ${val('rs-realpct')||0}%/${fmt(numParse(val('rs-realmax'))||0)} · Fun ${val('rs-funpct')||0}%/${fmt(numParse(val('rs-funmax'))||0)}`;
+    $('rs-rows').innerHTML='';rsSeq=0;
+    ids.filter(x=>(x.books||[]).some(b=>b.book===bk&&!b.limit)).forEach(x=>rsAddRow(x.label,bk));
+    rsEmptyCheck();updateRsTotal();
+    $('modal-rs2').classList.remove('hidden');
+  });
+  $('rs-addrow').addEventListener('click',()=>{
+    const used=[...$('rs-rows').querySelectorAll('select[id^="rt-id-"]')].map(s=>s.value);
+    const free=ids.find(x=>!used.includes(x.label));
+    rsAddRow(free?free.label:(ids[0]||{}).label,val('rs-book'));
+    rsEmptyCheck();updateRsTotal();
+  });
+  $('rs-back').addEventListener('click',()=>{$('modal-rs2').classList.add('hidden');$('modal-rs1').classList.remove('hidden');});
+  $('rs-save').addEventListener('click',()=>{
+    const common={date:val('rs-date'),type:'Rimborso Slot',game:'Slot',scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),notes:val('rs-notes')};
+    let added=0;
+    [...$('rs-rows').querySelectorAll('tr')].forEach(tr=>{
+      const k=tr.dataset.k;
+      const s=$('rt-start-'+k).value,e=$('rt-end-'+k).value,bm=$('rt-bonusmon-'+k).value;
+      if(s===''&&e===''&&bm==='')return;
+      moves.unshift({uid:uid(),pid:$('rt-id-'+k).value,book:$('rt-book-'+k).value,start:s,end:e,rsBonusMon:bm,...common});added++;
+    });
+    save();renderMoves();$('modal-rs2').classList.add('hidden');
+    if(added===0)alert('Nessun saldo inserito: nessun movimento creato.');
+  });
+
+  let rsEditUid=null;
+  function openRimborso(u){
+    refreshSelects();
+    rsEditUid=u;
+    const m=moves.find(x=>x.uid===u);if(!m)return;
+    $('rse-date').value=m.date||'';
+    fillSelect($('rse-id'),ids.map(x=>x.label));$('rse-id').value=m.pid||'';
+    fillSelect($('rse-book'),books.length?books:DEFAULT_BOOKS);$('rse-book').value=m.book||'';
+    $('rse-scadenza').value=m.scadenza||'';
+    $('rse-realpct').value=m.rsRealPct??'';
+    $('rse-realmax').value=m.rsRealMax??'';
+    $('rse-funpct').value=m.rsFunPct??'';
+    $('rse-funmax').value=m.rsFunMax??'';
+    $('rse-start').value=m.start??'';
+    $('rse-end').value=m.end??'';
+    $('rse-bonusmon').value=m.rsBonusMon??'';
+    $('rse-notes').value=m.notes||'';
+    $('modal-rs-edit').classList.remove('hidden');
+  }
+  $('rse-save').addEventListener('click',()=>{
+    if(!rsEditUid)return;
+    const i=moves.findIndex(x=>x.uid===rsEditUid);if(i<0)return;
+    moves[i]={...moves[i],date:val('rse-date'),pid:val('rse-id'),book:val('rse-book'),scadenza:val('rse-scadenza'),
+      rsRealPct:val('rse-realpct'),rsRealMax:val('rse-realmax'),rsFunPct:val('rse-funpct'),rsFunMax:val('rse-funmax'),
+      start:val('rse-start'),end:val('rse-end'),rsBonusMon:val('rse-bonusmon'),notes:val('rse-notes')};
+    rsEditUid=null;
+    save();renderMoves();$('modal-rs-edit').classList.add('hidden');
+  });
+
   $('btnBatch').addEventListener('click',()=>{
     if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}
     refreshSelects();
@@ -2729,19 +3083,25 @@
     const now=new Date();
     const curYear=String(now.getFullYear());
     const curYM=curYear+'-'+String(now.getMonth()+1).padStart(2,'0');
-    const totYear=moves.filter(m=>(m.date||'').slice(0,4)===curYear).reduce((s,m)=>s+profitOf(m),0);
-    const totMonth=moves.filter(m=>(m.date||'').slice(0,7)===curYM).reduce((s,m)=>s+profitOf(m),0);
+    const totMB=moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
+    const totMagg=moves.filter(m=>m.type==='Maggiorate').reduce((s,m)=>s+profitOf(m),0);
+    const totRS=moves.filter(m=>m.type==='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
     const rt=$('r-total');rt.textContent=fmtInt(tot);rt.className='big '+(tot>=0?'pos':'neg');autoFitBig(rt);
-    const ry=$('r-year');ry.textContent=fmtInt(totYear);ry.className='big '+(totYear>=0?'pos':'neg');autoFitBig(ry);
-    const rm=$('r-month');rm.textContent=fmtInt(totMonth);rm.className='big '+(totMonth>=0?'pos':'neg');autoFitBig(rm);
+    const rmb=$('r-mb');rmb.textContent=fmtInt(totMB);rmb.className='big '+(totMB>=0?'pos':'neg');autoFitBig(rmb);
+    const rmg=$('r-magg');rmg.textContent=fmtInt(totMagg);rmg.className='big '+(totMagg>=0?'pos':'neg');autoFitBig(rmg);
+    const rrs=$('r-rs');rrs.textContent=fmtInt(totRS);rrs.className='big '+(totRS>=0?'pos':'neg');autoFitBig(rrs);
 
-    // monthly by type: "Maggiorate" è ormai una tipologia vera, contata come le altre;
-    // Fun bonus resta solo di riferimento, non sommato
-    const REF_COLS=['Fun bonus'];
+    // tabella mensile principale: Totale / Matched Betting / Maggiorate / Rimborso Slot
     const monthsSet=[...new Set(moves.map(m=>(m.date||'').slice(0,7)).filter(Boolean))].sort();
-    const grid={},gridI={};
-    monthsSet.forEach(mo=>{grid[mo]={};tipos.forEach(t=>grid[mo][t]=0);gridI[mo]={};REF_COLS.forEach(c=>gridI[mo][c]=0);});
-    moves.forEach(m=>{const mo=(m.date||'').slice(0,7);if(!mo)return;const t=tipos.includes(m.type)?m.type:'Altro';grid[mo][t]+=profitOf(m);if(REF_COLS.includes(m.info))gridI[mo][m.info]+=profitOf(m);});
+    const grid={};
+    monthsSet.forEach(mo=>{grid[mo]={mb:0,magg:0,rs:0};});
+    moves.forEach(m=>{
+      const mo=(m.date||'').slice(0,7);if(!mo)return;
+      const p=profitOf(m);
+      if(m.type==='Maggiorate')grid[mo].magg+=p;
+      else if(m.type==='Rimborso Slot')grid[mo].rs+=p;
+      else grid[mo].mb+=p;
+    });
     const mlabel=mo=>{const [y,mm]=mo.split('-');return MONTHS[+mm-1]+' '+y;};
     const yearsM=[...new Set(monthsSet.map(mo=>mo.slice(0,4)))].sort();
     if(!selYear||!yearsM.includes(selYear))selYear=yearsM[yearsM.length-1]||'';
@@ -2749,19 +3109,43 @@
     $('mt-year').onchange=e=>{selYear=e.target.value;renderSummary();};
     const yMonths=monthsSet.filter(mo=>mo.startsWith(selYear));
     const mkCell=v=>`<td class="num ${v>=0?'pos':'neg'}">${v?fmt(v):'–'}</td>`;
-    const mkInfoCell=v=>`<td class="num" style="color:${v>=0?'#8fe6c9':'#ffb3bc'}">${v?fmt(v):'–'}</td>`;
+    let th=`<thead><tr><th>Mese</th><th class="num">Totale</th><th class="num">Matched Betting</th><th class="num">Maggiorate</th><th class="num">Rimborso Slot</th></tr></thead>`;
+    let colMB=0,colMagg=0,colRS=0,yTot=0,body='';
+    yMonths.forEach(mo=>{
+      const g=grid[mo];const rowTot=g.mb+g.magg+g.rs;
+      colMB+=g.mb;colMagg+=g.magg;colRS+=g.rs;yTot+=rowTot;
+      body+=`<tr><td>${mlabel(mo)}</td>${mkCell(rowTot)}${mkCell(g.mb)}${mkCell(g.magg)}${mkCell(g.rs)}</tr>`;
+    });
+    let colMBg=0,colMaggg=0,colRSg=0;
+    monthsSet.forEach(mo=>{colMBg+=grid[mo].mb;colMaggg+=grid[mo].magg;colRSg+=grid[mo].rs;});
+    const footY=`<tr style="font-weight:700"><td>Totale ${selYear}</td>${mkCell(yTot)}${mkCell(colMB)}${mkCell(colMagg)}${mkCell(colRS)}</tr>`;
+    const footG=`<tr style="font-weight:700"><td style="color:var(--green)">Grand Totale</td>${mkCell(tot)}${mkCell(colMBg)}${mkCell(colMaggg)}${mkCell(colRSg)}</tr>`;
+    $('monthly-table').innerHTML=th+'<tbody>'+(yMonths.length?body:`<tr><td colspan="5"><span class="note">Nessun dato per ${selYear}.</span></td></tr>`)+footY+footG+'</tbody>';
+
+    // tabella di dettaglio: spacchetta "Matched Betting" nelle sue tipologie
+    const detailTipos=tipos.filter(t=>t!=='Maggiorate');
+    const REF_COLS=['Fun bonus'];
+    const gridD={},gridDI={};
+    monthsSet.forEach(mo=>{gridD[mo]={};detailTipos.forEach(t=>gridD[mo][t]=0);gridDI[mo]={};REF_COLS.forEach(c=>gridDI[mo][c]=0);});
+    moves.forEach(m=>{
+      if(m.type==='Maggiorate'||m.type==='Rimborso Slot')return;
+      const mo=(m.date||'').slice(0,7);if(!mo)return;
+      const t=detailTipos.includes(m.type)?m.type:'Altro';
+      gridD[mo][t]+=profitOf(m);
+      if(REF_COLS.includes(m.info))gridDI[mo][m.info]+=profitOf(m);
+    });
     const infoTh=REF_COLS.map(c=>`<th class="num" style="color:var(--amber)">${c} *</th>`).join('');
-    let th=`<thead><tr><th>Mese</th><th class="num">Totale</th>${tipos.map(t=>`<th class="num">${t}</th>`).join('')}${infoTh}</tr></thead>`;
-    const colY={},colYI={};tipos.forEach(t=>colY[t]=0);REF_COLS.forEach(c=>colYI[c]=0);let yTot=0;let body='';
-    yMonths.forEach(mo=>{let rowTot=0;let tds='';tipos.forEach(t=>{const v=grid[mo][t];rowTot+=v;colY[t]+=v;tds+=mkCell(v);});
-      let itds='';REF_COLS.forEach(c=>{const v=gridI[mo][c];colYI[c]+=v;itds+=mkInfoCell(v);});
-      yTot+=rowTot;body+=`<tr><td>${mlabel(mo)}</td>${mkCell(rowTot)}${tds}${itds}</tr>`;});
-    const colG={},colGI={};tipos.forEach(t=>colG[t]=0);REF_COLS.forEach(c=>colGI[c]=0);
-    monthsSet.forEach(mo=>{tipos.forEach(t=>colG[t]+=grid[mo][t]);REF_COLS.forEach(c=>colGI[c]+=gridI[mo][c]);});
-    const footY=`<tr style="font-weight:700"><td>Totale ${selYear}</td>${mkCell(yTot)}${tipos.map(t=>mkCell(colY[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colYI[c])}</td>`).join('')}</tr>`;
-    const footG=`<tr style="font-weight:700"><td style="color:var(--green)">Grand Totale</td>${mkCell(tot)}${tipos.map(t=>mkCell(colG[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colGI[c])}</td>`).join('')}</tr>`;
-    const ncol=tipos.length+REF_COLS.length+2;
-    $('monthly-table').innerHTML=th+'<tbody>'+(yMonths.length?body:`<tr><td colspan="${ncol}"><span class="note">Nessun dato per ${selYear}.</span></td></tr>`)+footY+footG+'</tbody>';
+    let thD=`<thead><tr><th>Mese</th><th class="num">Totale</th>${detailTipos.map(t=>`<th class="num">${t}</th>`).join('')}${infoTh}</tr></thead>`;
+    const colYD={},colYDI={};detailTipos.forEach(t=>colYD[t]=0);REF_COLS.forEach(c=>colYDI[c]=0);let yTotD=0;let bodyD='';
+    yMonths.forEach(mo=>{let rowTot=0;let tds='';detailTipos.forEach(t=>{const v=gridD[mo][t];rowTot+=v;colYD[t]+=v;tds+=mkCell(v);});
+      let itds='';REF_COLS.forEach(c=>{const v=gridDI[mo][c];colYDI[c]+=v;itds+=`<td class="num" style="color:${v>=0?'#8fe6c9':'#ffb3bc'}">${v?fmt(v):'–'}</td>`;});
+      yTotD+=rowTot;bodyD+=`<tr><td>${mlabel(mo)}</td>${mkCell(rowTot)}${tds}${itds}</tr>`;});
+    const colGD={},colGDI={};detailTipos.forEach(t=>colGD[t]=0);REF_COLS.forEach(c=>colGDI[c]=0);
+    monthsSet.forEach(mo=>{detailTipos.forEach(t=>colGD[t]+=gridD[mo][t]);REF_COLS.forEach(c=>colGDI[c]+=gridDI[mo][c]);});
+    const footYD=`<tr style="font-weight:700"><td>Totale ${selYear}</td>${mkCell(yTotD)}${detailTipos.map(t=>mkCell(colYD[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colYDI[c])}</td>`).join('')}</tr>`;
+    const footGD=`<tr style="font-weight:700"><td style="color:var(--green)">Grand Totale</td>${mkCell(totMB)}${detailTipos.map(t=>mkCell(colGD[t])).join('')}${REF_COLS.map(c=>`<td class="num" style="color:var(--amber)">${fmt(colGDI[c])}</td>`).join('')}</tr>`;
+    const ncolD=detailTipos.length+REF_COLS.length+2;
+    $('monthly-detail-table').innerHTML=thD+'<tbody>'+(yMonths.length?bodyD:`<tr><td colspan="${ncolD}"><span class="note">Nessun dato per ${selYear}.</span></td></tr>`)+footYD+footGD+'</tbody>';
 
     // totale per anno
     const years=[...new Set(moves.map(m=>(m.date||'').slice(0,4)).filter(Boolean))].sort();
@@ -2799,6 +3183,17 @@
       const label=d&&!isNaN(d)?d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'}):'—';
       return {label,value:mgCum};});
     $('mg-chart-cum').innerHTML=mgCumData.length?svgLine(mgCumData,300,16,chartW('mg-chart-cum',1000)):emptyChart();
+
+    // rimborso slot — statistiche dedicate
+    const rsAll=moves.filter(m=>m.type==='Rimborso Slot');
+    const rsProfit=rsAll.reduce((s,m)=>s+profitOf(m),0);
+    const rsp=$('rs-stat-profit');rsp.textContent=fmt(rsProfit);rsp.className='big '+(rsProfit>=0?'pos':'neg');
+    $('rs-stat-count').textContent=rsAll.length;
+    const rsPending=rsAll.filter(m=>m.rsBonusMon===undefined||m.rsBonusMon==='');
+    const rsRealPend=rsPending.reduce((s,m)=>s+rimborsoAttesi(m).realAtteso,0);
+    const rsFunPend=rsPending.reduce((s,m)=>s+rimborsoAttesi(m).funAtteso,0);
+    $('rs-stat-real').textContent=fmt(rsRealPend);
+    $('rs-stat-fun').textContent=fmt(rsFunPend);
 
     // charts
     const perMonth=monthsSet.map(mo=>({label:mlabel(mo).split(' ')[0],value:Object.values(grid[mo]).reduce((a,b)=>a+b,0)}));

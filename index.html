@@ -44,6 +44,11 @@
   .btn.ghost{background:transparent;color:var(--muted);border-color:var(--line2);box-shadow:none}
   .btn.ghost:hover{color:var(--txt);border-color:var(--accent);filter:none}
   .btn.blue{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+  /* pulsanti di inserimento: stesso colore della categoria (Matched Betting verde, Maggiorate ambra, Rimborso Slot viola) */
+  .btn.mv-green{background:var(--green);border-color:var(--green);color:#06140f}
+  .btn.mv-green-ghost{background:rgba(69,179,147,.12);color:var(--green);border-color:var(--green)}
+  .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
+  body.light .btn.mv-green,html.light .btn.mv-green{color:#fff}
   .btn.blue:hover{background:var(--accent);color:var(--btn-txt);filter:none}
   .tabs{display:flex;gap:4px;flex-wrap:wrap;margin:26px 0 24px;background:var(--panel2);border:1px solid var(--line);padding:6px;border-radius:999px;box-shadow:var(--sh-1)}
   .tab{flex:1 1 auto;min-width:118px;border:none;cursor:pointer;font-family:var(--f-body);font-weight:600;font-size:13.5px;color:var(--muted);background:transparent;padding:11px 16px;border-radius:999px;transition:background .18s ease,color .18s ease;text-align:center;letter-spacing:-.01em}
@@ -812,12 +817,12 @@
   <!-- ===== MOVIMENTI ===== -->
   <section id="moves" class="pane hidden">
     <div class="toolbar">
-      <button class="btn" id="btnSingle" data-testid="btn-single">+ Movimento singolo</button>
+      <button class="btn mv-green" id="btnSingle" data-testid="btn-single">+ Movimento singolo</button>
       <button class="btn" id="btnMaggiorata" data-testid="btn-maggiorata" style="background:var(--amber);color:#1a1400;border-color:var(--amber)">+ Maggiorata</button>
-      <button class="btn" id="btnRimborso" data-testid="btn-rimborso" style="background:var(--blue);color:#fff;border-color:var(--blue)">+ Rimborso Slot</button>
+      <button class="btn mv-purple" id="btnRimborso" data-testid="btn-rimborso">+ Rimborso Slot</button>
       <button class="btn ghost" id="btnDrafts" data-testid="btn-drafts">Movimenti da completare<span class="badge hidden" id="drafts-badge" data-testid="drafts-badge" style="margin-left:6px"></span></button>
-      <button class="btn blue hidden" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
-      <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv">Esporta CSV</button>
+      <button class="btn mv-green-ghost hidden" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
+      <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv" style="margin-left:auto">Esporta CSV</button>
     </div>
     <div class="grid4" style="margin-bottom:18px">
       <div class="card stat"><div class="lbl">Totale</div><div class="big pos" id="s-total" data-testid="s-total">€ 0,00</div></div>

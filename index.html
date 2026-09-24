@@ -851,6 +851,10 @@
         <div class="field" style="max-width:220px;margin-bottom:0"><label>Cerca</label>
           <input type="text" id="mv-search" data-testid="mv-search" placeholder="ID, note, gioco...">
         </div>
+        <div class="field" style="max-width:170px;margin-bottom:0"><label>Ordina per</label>
+          <select id="mv-sortcol" data-testid="mv-sortcol"></select>
+        </div>
+        <button class="btn ghost" id="mv-sortdir" data-testid="mv-sortdir" title="Inverti direzione">▼</button>
         <button class="btn ghost" id="mv-filter-clear" data-testid="mv-filter-clear">Rimuovi filtro</button>
         <span class="note" id="mv-filter-count" style="margin:0"></span>
       </div>
@@ -858,8 +862,8 @@
       <div id="mv-pane-matched" class="mpane">
         <table>
           <thead><tr>
-            <th>Data</th><th>ID</th><th>Book</th><th>Tipologia</th><th>Gioco</th><th>Info</th>
-            <th class="num">Iniziale</th><th class="num">Finale</th><th class="num">Bonus</th><th class="num">Ricaricato</th><th class="num">Profitto</th><th>Note</th><th></th>
+            <th data-sort="date">Data</th><th data-sort="pid">ID</th><th data-sort="book">Book</th><th data-sort="type">Tipologia</th><th data-sort="game">Gioco</th><th data-sort="info">Info</th>
+            <th class="num" data-sort="start">Iniziale</th><th class="num" data-sort="end">Finale</th><th class="num" data-sort="bonus">Bonus</th><th class="num" data-sort="reload">Ricaricato</th><th class="num" data-sort="profit">Profitto</th><th>Note</th><th></th>
           </tr></thead>
           <tbody id="moves-rows" data-testid="moves-rows"></tbody>
         </table>
@@ -869,8 +873,8 @@
       <div id="mv-pane-maggiorate" class="mpane hidden">
         <table>
           <thead><tr>
-            <th>Data</th><th>ID</th><th>Book</th><th>Gioco</th><th>Info</th>
-            <th class="num">Iniziale</th><th class="num">Finale</th><th class="num">Bonus</th><th class="num">Ricaricato</th><th class="num">Profitto</th><th>Note</th><th></th>
+            <th data-sort="date">Data</th><th data-sort="pid">ID</th><th data-sort="book">Book</th><th data-sort="game">Gioco</th><th data-sort="info">Info</th>
+            <th class="num" data-sort="stake">Iniziale</th><th class="num" data-sort="quota">Finale</th><th class="num" data-sort="bonus">Bonus</th><th class="num" data-sort="reload">Ricaricato</th><th class="num" data-sort="profit">Profitto</th><th>Note</th><th></th>
           </tr></thead>
           <tbody id="mg-moves-rows" data-testid="mg-moves-rows"></tbody>
         </table>
@@ -881,9 +885,9 @@
         <p class="sub" style="margin-top:0">Le righe con scadenza già passata e senza Bonus Monetizzato ancora inserito salgono in cima, come promemoria.</p>
         <table>
           <thead><tr>
-            <th>Data</th><th>ID</th><th>Book</th><th>Scadenza</th>
-            <th class="num">Saldo iniziale</th><th class="num">Saldo finale</th><th class="num">Netto Qual.</th>
-            <th class="num">Real atteso</th><th class="num">Fun atteso</th><th class="num">Bonus Monetizzato</th><th class="num">Profitto</th><th>Note</th><th></th>
+            <th data-sort="date">Data</th><th data-sort="pid">ID</th><th data-sort="book">Book</th><th data-sort="scadenza">Scadenza</th>
+            <th class="num" data-sort="start">Saldo iniziale</th><th class="num" data-sort="end">Saldo finale</th><th class="num" data-sort="netto">Netto Qual.</th>
+            <th class="num" data-sort="realatteso">Real atteso</th><th class="num" data-sort="funatteso">Fun atteso</th><th class="num" data-sort="bonusmon">Bonus Monetizzato</th><th class="num" data-sort="profit">Profitto</th><th>Note</th><th></th>
           </tr></thead>
           <tbody id="rs-moves-rows" data-testid="rs-moves-rows"></tbody>
         </table>
@@ -1832,14 +1836,56 @@
   }));
 
   let mvActiveTab='matched';
+  const mvSort={matched:{col:'date',dir:-1},maggiorate:{col:'date',dir:-1},rimborso:{col:'date',dir:-1}};
+  function mvSortValue(m,col){
+    switch(col){
+      case 'profit': return profitOf(m);
+      case 'start': return numParse(m.start)||0;
+      case 'end': return numParse(m.end)||0;
+      case 'bonus': return numParse(m.bonus)||0;
+      case 'reload': return numParse(m.reload)||0;
+      case 'stake': return numParse(m.stake)||0;
+      case 'quota': return numParse(m.quota)||0;
+      case 'netto': return rimborsoAttesi(m).netto;
+      case 'realatteso': return rimborsoAttesi(m).realAtteso;
+      case 'funatteso': return rimborsoAttesi(m).funAtteso;
+      case 'bonusmon': return numParse(m.rsBonusMon)||0;
+      case 'date': case 'scadenza': return m[col]||'';
+      default: return (m[col]||'').toString().toLowerCase();
+    }
+  }
+  function mvApplySort(arr,col,dir){
+    return [...arr].sort((a,b)=>{
+      const va=mvSortValue(a,col),vb=mvSortValue(b,col);
+      if(va<vb)return -1*dir;if(va>vb)return 1*dir;return 0;
+    });
+  }
+  function mvSortOptionsFor(tab){
+    return [...document.querySelectorAll('#mv-pane-'+tab+' thead th[data-sort]')].map(th=>({col:th.dataset.sort,label:th.textContent.trim()}));
+  }
+  function mvSyncSortUI(){
+    const s=mvSort[mvActiveTab];
+    $('mv-sortcol').innerHTML=mvSortOptionsFor(mvActiveTab).map(o=>`<option value="${o.col}"${o.col===s.col?' selected':''}>${esc(o.label)}</option>`).join('');
+    $('mv-sortdir').textContent=s.dir>0?'▲':'▼';
+  }
+  $('mv-sortcol').addEventListener('change',()=>{
+    mvSort[mvActiveTab].col=val('mv-sortcol');mvSort[mvActiveTab].dir=1;
+    mvSyncSortUI();renderMoves();
+  });
+  $('mv-sortdir').addEventListener('click',()=>{
+    mvSort[mvActiveTab].dir=-mvSort[mvActiveTab].dir;
+    mvSyncSortUI();renderMoves();
+  });
   document.querySelectorAll('#mv-subtabs .tab').forEach(t=>t.addEventListener('click',()=>{
     document.querySelectorAll('#mv-subtabs .tab').forEach(x=>x.classList.remove('active'));
     document.querySelectorAll('#moves .mpane').forEach(p=>p.classList.add('hidden'));
     t.classList.add('active');mvActiveTab=t.dataset.mtab;
     $('mv-pane-'+mvActiveTab).classList.remove('hidden');
     $('mv-tipo-field').classList.toggle('hidden',mvActiveTab!=='matched');
+    mvSyncSortUI();
     renderMoves();
   }));
+  mvSyncSortUI();
 
   function fillSelect(el,arr,withEmpty){
     el.innerHTML=(withEmpty?'<option value=""></option>':'')+arr.map(o=>`<option value="${esc(o)}">${o===''?'—':esc(o)}</option>`).join('');
@@ -1906,21 +1952,19 @@
       (!fSearch||[m.pid,m.book,m.type,m.game,m.info,m.notes].some(v=>String(v||'').toLowerCase().includes(fSearch)))
     );
 
+    const sortState=mvSort[mvActiveTab];
     if(mvActiveTab==='rimborso'){
       const today=new Date().toISOString().slice(0,10);
       const needsAttn=m=>m.scadenza&&m.scadenza<today&&(m.rsBonusMon===undefined||m.rsBonusMon==='');
-      displayed=[...displayed].sort((a,b)=>{
-        const an=needsAttn(a),bn=needsAttn(b);
-        if(an!==bn)return an?-1:1;
-        if(an&&bn)return (a.scadenza||'').localeCompare(b.scadenza||'');
-        return (b.date||'').localeCompare(a.date||'');
-      });
+      const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
+      const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
+      displayed=[...overdue,...rest];
       renderRimborsoRows(displayed);
     } else if(mvActiveTab==='maggiorate'){
-      displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      displayed=mvApplySort(displayed,sortState.col,sortState.dir);
       renderMaggiorateRows(displayed);
     } else {
-      displayed=[...displayed].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      displayed=mvApplySort(displayed,sortState.col,sortState.dir);
       renderMatchedRows(displayed);
     }
 

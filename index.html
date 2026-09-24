@@ -898,7 +898,7 @@
           <thead><tr>
             <th data-sort="date">Data</th><th data-sort="pid">ID</th><th data-sort="book">Book</th><th data-sort="scadenza">Scadenza</th>
             <th class="num" data-sort="start">Saldo iniziale</th><th class="num" data-sort="end">Saldo finale</th><th class="num" data-sort="netto">Netto Qual.</th>
-            <th class="num" data-sort="realatteso">Real atteso</th><th class="num" data-sort="funatteso">Fun atteso</th><th class="num" data-sort="bonusmon">Bonus Monetizzato</th><th class="num" data-sort="profit">Profitto</th><th class="num" data-sort="ev" title="Valore atteso con la strategia, arrotondato a 0,50 €">EV</th><th>Note</th><th></th>
+            <th class="num" data-sort="realatteso">Real atteso</th><th class="num" data-sort="funatteso">Fun atteso</th><th class="num" data-sort="bonusmon">Bonus Monetizzato</th><th class="num" data-sort="profit">Profitto</th><th class="num" data-sort="ev" title="Valore atteso inserito da te">EV</th><th>Note</th><th></th>
           </tr></thead>
           <tbody id="rs-moves-rows" data-testid="rs-moves-rows"></tbody>
         </table>
@@ -1509,13 +1509,14 @@
       <div><label>Real Massimo €</label><input class="num" id="rs-realmax" data-testid="rs-realmax" placeholder="0"></div>
       <div><label>Fun %</label><input class="num" id="rs-funpct" data-testid="rs-funpct" placeholder="es. 100"></div>
       <div><label>Fun Massimo €</label><input class="num" id="rs-funmax" data-testid="rs-funmax" placeholder="0"></div>
+      <div><label>EV €</label><input class="num" id="rs-ev" data-testid="rs-ev" placeholder="—"></div>
       <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <span class="sub" style="margin:0">Stake massimo consigliato — oltre questo, il rischio in più non è coperto da nessuno dei due tetti</span>
         <b id="rs-stakemax" data-testid="rs-stakemax" style="font-family:var(--f-disp);font-size:18px">—</b>
       </div>
       <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="sub" style="margin:0">Valore atteso con la strategia (stop a +20%, spin da 1/20, RTP 95%, varianza alta) — stake usato: <b id="rs-stakeused" data-testid="rs-stakeused">—</b></span>
-        <b id="rs-evprev" data-testid="rs-evprev" style="font-family:var(--f-disp);font-size:18px">—</b>
+        <span class="sub" style="margin:0">EV suggerito (stop a +20%, spin da 1/20, RTP 95%, varianza alta) — stake usato: <b id="rs-stakeused" data-testid="rs-stakeused">—</b></span>
+        <span style="display:flex;align-items:center;gap:10px"><b id="rs-evprev" data-testid="rs-evprev" style="font-family:var(--f-disp);font-size:18px">—</b><button class="btn ghost" id="rs-evuse" data-testid="rs-evuse" type="button" style="padding:4px 12px">Usa</button></span>
       </div>
       <div class="full"><label>Note</label><input id="rs-notes" data-testid="rs-notes" placeholder="note libere..."></div>
     </div>
@@ -1563,13 +1564,14 @@
       <div><label>Real Massimo €</label><input class="num" id="rse-realmax" data-testid="rse-realmax"></div>
       <div><label>Fun %</label><input class="num" id="rse-funpct" data-testid="rse-funpct"></div>
       <div><label>Fun Massimo €</label><input class="num" id="rse-funmax" data-testid="rse-funmax"></div>
+      <div><label>EV €</label><input class="num" id="rse-ev" data-testid="rse-ev" placeholder="—"></div>
       <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <span class="sub" style="margin:0">Stake massimo consigliato — oltre questo, il rischio in più non è coperto da nessuno dei due tetti</span>
         <b id="rse-stakemax" data-testid="rse-stakemax" style="font-family:var(--f-disp);font-size:18px">—</b>
       </div>
       <div class="full" style="background:var(--panel2);border-radius:var(--r-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <span class="sub" style="margin:0">Valore atteso con la strategia (stop a +20%, spin da 1/20, RTP 95%, varianza alta) — stake usato: <b id="rse-stakeused" data-testid="rse-stakeused">—</b></span>
-        <b id="rse-evprev" data-testid="rse-evprev" style="font-family:var(--f-disp);font-size:18px">—</b>
+        <span class="sub" style="margin:0">EV suggerito (stop a +20%, spin da 1/20, RTP 95%, varianza alta) — stake usato: <b id="rse-stakeused" data-testid="rse-stakeused">—</b></span>
+        <span style="display:flex;align-items:center;gap:10px"><b id="rse-evprev" data-testid="rse-evprev" style="font-family:var(--f-disp);font-size:18px">—</b><button class="btn ghost" id="rse-evuse" data-testid="rse-evuse" type="button" style="padding:4px 12px">Usa</button></span>
       </div>
       <div><label>Saldo iniziale €</label><input class="num" id="rse-start" data-testid="rse-start"></div>
       <div><label>Saldo finale €</label><input class="num" id="rse-end" data-testid="rse-end"></div>
@@ -1783,6 +1785,8 @@
     // deduce l'esito dal segno del profitto per le Maggiorate storiche senza risultato esplicito
     moves.forEach(m=>{if(m.type==='Maggiorate'&&!m.result&&(numParse(m.end)||numParse(m.bonus))){m.result=profitOf(m)>=0?'v':'p';repaired=true;}});
     if(repaired)localStorage.setItem('tk_moves',JSON.stringify(moves));
+    // sincronizza su Sheets solo se i dati arrivano da Sheets: mai spingere dati locali forse vecchi
+    if(rsFreezeEV()){localStorage.setItem('tk_moves',JSON.stringify(moves));if(externalData)gsScheduleSync();}
   }
   function save(){
     localStorage.setItem('tk_books',JSON.stringify(books));
@@ -1889,7 +1893,19 @@
     return{S:cap>0?Math.min(rsStakeGlobal,cap):rsStakeGlobal,limited:cap>0&&cap<rsStakeGlobal};
   }
   const round05=v=>{const r=Math.round(v*2)/2;return r===0?0:r;};
-  function rsEV(m){const st=rsStakeOf(m);return{ev:round05(rsEVFor(st.S,m)),S:st.S,limited:st.limited};}
+  // EV suggerito: calcolato col modello, oppure fisso per le Betsson solo-Fun (tetto Fun 50€ → 4€, 100€ → 8€)
+  const RS_EV_FIXED={betsson:{50:4,100:8}};
+  function rsEVSuggest(m){
+    const st=rsStakeOf(m);
+    const fx=RS_EV_FIXED[String(m.book||'').trim().toLowerCase()];
+    if(fx&&!(numParse(m.rsRealPct)>0)){const v=fx[numParse(m.rsFunMax)];if(v!==undefined)return{ev:v,S:st.S,limited:st.limited,fixed:true};}
+    return{ev:round05(rsEVFor(st.S,m)),S:st.S,limited:st.limited,fixed:false};
+  }
+  // EV inserito nella riga (da te, o congelato dal vecchio calcolo automatico); null se assente
+  const rsEVStored=m=>{const v=numParse(m.rsEV);return isNaN(v)?null:v;};
+  // una volta sola: le righe Rimborso Slot che non hanno ancora il campo EV ricevono il valore calcolato,
+  // che poi resta fisso. Le righe nuove hanno sempre il campo (anche vuoto), quindi non vengono toccate.
+  function rsFreezeEV(){let n=0;moves.forEach(m=>{if(m.type==='Rimborso Slot'&&m.rsEV===undefined){m.rsEV=String(rsEVSuggest(m).ev);n++;}});return n;}
   const fmtSigned=v=>(v>=0?'+':'')+fmt(v);
 
   // ---- valore del rimborso Fun ----
@@ -1968,7 +1984,7 @@
       case 'realatteso': return rimborsoAttesi(m).realAtteso;
       case 'funatteso': return rimborsoAttesi(m).funAtteso;
       case 'bonusmon': return numParse(m.rsBonusMon)||0;
-      case 'ev': return rsEV(m).ev;
+      case 'ev': {const v=rsEVStored(m);return v===null?-1e9:v;}
       case 'date': case 'scadenza': return m[col]||'';
       default: return (m[col]||'').toString().toLowerCase();
     }
@@ -2157,7 +2173,7 @@
     displayed.forEach(m=>{
       const p=profitOf(m);
       const att=rimborsoAttesi(m);
-      const ev=rsEV(m);
+      const evS=rsEVStored(m);
       const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
       const overdue=m.scadenza&&m.scadenza<today&&!bmSet&&att.netto<0;
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
@@ -2170,7 +2186,7 @@
         `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${att.funAtteso?fmt(att.funAtteso):'–'}</td>`+
         `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):(att.netto>=0?'<span class="note" style="margin:0">non dovuto</span>':'<span class="note" style="margin:0">da inserire</span>')}</td>`+
         `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
-        `<td class="num" style="color:var(${ev.ev>=0?'--green':'--red'})" data-label="EV" title="Stake usato: ${fmt(ev.S)}${ev.limited?' (limite della promo)':''}${att.funAtteso||(numParse(m.rsFunPct)||0)>0?' · Fun: '+rsFunLabel(m.book):''}">${fmtSigned(ev.ev)}</td>`+
+        `<td class="num" data-label="EV" style="color:var(${evS===null?'--dim':evS>=0?'--green':'--red'})">${evS===null?'–':fmtSigned(evS)}</td>`+
         `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
         `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
@@ -2278,14 +2294,16 @@
     const funThresh=funPct>0?funMax/funPct:0;
     const stakeMax=Math.max(realThresh,funThresh);
     $(prefix+'-stakemax').textContent=stakeMax>0?fmt(stakeMax):'—';
-    const r=rsEV({rsRealPct:val(prefix+'-realpct'),rsRealMax:val(prefix+'-realmax'),rsFunPct:val(prefix+'-funpct'),rsFunMax:val(prefix+'-funmax'),book:val(prefix+'-book')});
+    const r=rsEVSuggest({rsRealPct:val(prefix+'-realpct'),rsRealMax:val(prefix+'-realmax'),rsFunPct:val(prefix+'-funpct'),rsFunMax:val(prefix+'-funmax'),book:val(prefix+'-book')});
     const el=$(prefix+'-evprev');el.textContent=fmtSigned(r.ev);el.className=r.ev>=0?'pos':'neg';
-    $(prefix+'-stakeused').textContent=fmt(r.S)+(r.limited?' (limite della promo)':' (il tuo stake)')+((numParse(val(prefix+'-funpct'))||0)>0?' · Fun: '+rsFunLabel(val(prefix+'-book')):'');
+    $(prefix+'-ev').placeholder='suggerito '+String(r.ev).replace('.',',');$(prefix+'-evuse').dataset.ev=r.ev;
+    $(prefix+'-stakeused').textContent=r.fixed?'— (valore fisso Betsson)':fmt(r.S)+(r.limited?' (limite della promo)':' (il tuo stake)')+((numParse(val(prefix+'-funpct'))||0)>0?' · Fun: '+rsFunLabel(val(prefix+'-book')):'');
   }
   ['rs-realpct','rs-realmax','rs-funpct','rs-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rs')));
   ['rse-realpct','rse-realmax','rse-funpct','rse-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rse')));
   $('rs-book').addEventListener('change',()=>computeStakeMax('rs'));
   $('rse-book').addEventListener('change',()=>computeStakeMax('rse'));
+  ['rs','rse'].forEach(p=>$(p+'-evuse').addEventListener('click',()=>{const v=$(p+'-evuse').dataset.ev;if(v!==undefined)$(p+'-ev').value=String(v).replace('.',',');}));
 
   let rsSeq=0;
   function rsAddRow(idLabel,bookName,prefill){
@@ -2354,7 +2372,7 @@
     if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}
     fillSelect($('rs-book'),books.length?books:DEFAULT_BOOKS);
     $('rs-date').value=new Date().toISOString().slice(0,10);
-    $('rs-scadenza').value='';$('rs-realpct').value='';$('rs-realmax').value='';$('rs-funpct').value='';$('rs-funmax').value='';$('rs-notes').value='';
+    $('rs-scadenza').value='';$('rs-realpct').value='';$('rs-realmax').value='';$('rs-funpct').value='';$('rs-funmax').value='';$('rs-ev').value='';$('rs-notes').value='';
     computeStakeMax('rs');
     $('modal-rs1').classList.remove('hidden');
   });
@@ -2375,7 +2393,7 @@
   });
   $('rs-back').addEventListener('click',()=>{$('modal-rs2').classList.add('hidden');$('modal-rs1').classList.remove('hidden');});
   $('rs-save').addEventListener('click',()=>{
-    const common={date:val('rs-date'),type:'Rimborso Slot',game:'Slot',scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),notes:val('rs-notes')};
+    const common={date:val('rs-date'),type:'Rimborso Slot',game:'Slot',scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),rsEV:val('rs-ev'),notes:val('rs-notes')};
     let added=0;
     [...$('rs-rows').querySelectorAll('tr')].forEach(tr=>{
       const k=tr.dataset.k;
@@ -2404,6 +2422,7 @@
     $('rse-end').value=m.end??'';
     $('rse-bonusmon').value=m.rsBonusMon??'';
     $('rse-notes').value=m.notes||'';
+    $('rse-ev').value=m.rsEV??'';
     computeStakeMax('rse');
     $('modal-rs-edit').classList.remove('hidden');
   }
@@ -2412,7 +2431,7 @@
     const i=moves.findIndex(x=>x.uid===rsEditUid);if(i<0)return;
     moves[i]={...moves[i],date:val('rse-date'),pid:val('rse-id'),book:val('rse-book'),scadenza:val('rse-scadenza'),
       rsRealPct:val('rse-realpct'),rsRealMax:val('rse-realmax'),rsFunPct:val('rse-funpct'),rsFunMax:val('rse-funmax'),
-      start:val('rse-start'),end:val('rse-end'),rsBonusMon:val('rse-bonusmon'),notes:val('rse-notes')};
+      start:val('rse-start'),end:val('rse-end'),rsBonusMon:val('rse-bonusmon'),rsEV:val('rse-ev'),notes:val('rse-notes')};
     rsEditUid=null;
     save();renderMoves();$('modal-rs-edit').classList.add('hidden');
   });
@@ -2836,7 +2855,7 @@
   $('new-id').addEventListener('keydown',e=>{if(e.key==='Enter')$('add-id').click();});
   $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,rsStake:rsStakeGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
   $('imp-json').addEventListener('click',()=>$('imp-file').click());
-  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
+  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}rsFreezeEV();save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
   $('wipe').addEventListener('click',()=>{if(confirm('Cancellare TUTTI i movimenti? (book e ID restano)')){moves=[];save();renderMoves();}});
   $('fix-orphan-pids').addEventListener('click',()=>{
     const validLabels=new Set(ids.map(x=>x.label));
@@ -3438,16 +3457,16 @@
     const rsFunPend=rsPending.reduce((s,m)=>s+rimborsoAttesi(m).funAtteso,0);
     $('rs-stat-real').textContent=fmt(rsRealPend);
     $('rs-stat-fun').textContent=fmt(rsFunPend);
-    const rsEvTot=rsAll.reduce((s,m)=>s+rsEV(m).ev,0);
+    const rsEvTot=rsAll.reduce((s,m)=>s+(rsEVStored(m)||0),0);
     const rse=$('rs-stat-ev');rse.textContent=fmtSigned(rsEvTot);rse.className='big '+(rsEvTot>=0?'pos':'neg');
     // scarto solo sulle promo chiuse (vinte, oppure perse con Bonus Monetizzato già inserito)
     const rsClosed=rsAll.filter(m=>rimborsoAttesi(m).netto>=0||!(m.rsBonusMon===undefined||m.rsBonusMon===''));
-    const rsDiff=rsClosed.reduce((s,m)=>s+profitOf(m)-rsEV(m).ev,0);
+    const rsDiff=rsClosed.filter(m=>rsEVStored(m)!==null).reduce((s,m)=>s+profitOf(m)-rsEVStored(m),0);
     const rsd=$('rs-stat-diff');rsd.textContent=fmtSigned(rsDiff);rsd.className='big '+(rsDiff>=0?'pos':'neg');
     [rsp,rse,rsd].forEach(autoFitBig);
     // andamento cumulato per giorno: profitto reale contro valore atteso
     const rsByDay={};
-    rsAll.forEach(m=>{const d=m.date||'';if(!d)return;const o=rsByDay[d]=rsByDay[d]||{p:0,e:0};o.p+=profitOf(m);o.e+=rsEV(m).ev;});
+    rsAll.forEach(m=>{const d=m.date||'';if(!d)return;const o=rsByDay[d]=rsByDay[d]||{p:0,e:0};o.p+=profitOf(m);o.e+=rsEVStored(m)||0;});
     const rsDays=Object.keys(rsByDay).sort();let cp=0,ce=0;const rsReal=[],rsExp=[];
     rsDays.forEach(d=>{cp+=rsByDay[d].p;ce+=rsByDay[d].e;rsReal.push(cp);rsExp.push(ce);});
     const rsLbl=rsDays.map(d=>{const x=new Date(d);return isNaN(x)?d:x.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'});});

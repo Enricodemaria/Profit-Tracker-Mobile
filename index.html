@@ -1893,19 +1893,23 @@
     return{S:cap>0?Math.min(rsStakeGlobal,cap):rsStakeGlobal,limited:cap>0&&cap<rsStakeGlobal};
   }
   const round05=v=>{const r=Math.round(v*2)/2;return r===0?0:r;};
-  // EV suggerito: calcolato col modello, oppure fisso per le Betsson solo-Fun (tetto Fun 50€ → 4€, 100€ → 8€)
-  const RS_EV_FIXED={betsson:{50:4,100:8}};
+  // EV suggerito: calcolato col modello, oppure fisso per book con valore deciso da te (Betsson: sempre 4€)
+  const RS_EV_FIXED={betsson:4};
   function rsEVSuggest(m){
     const st=rsStakeOf(m);
     const fx=RS_EV_FIXED[String(m.book||'').trim().toLowerCase()];
-    if(fx&&!(numParse(m.rsRealPct)>0)){const v=fx[numParse(m.rsFunMax)];if(v!==undefined)return{ev:v,S:st.S,limited:st.limited,fixed:true};}
+    if(fx!==undefined)return{ev:fx,S:st.S,limited:st.limited,fixed:true};
     return{ev:round05(rsEVFor(st.S,m)),S:st.S,limited:st.limited,fixed:false};
   }
   // EV inserito nella riga (da te, o congelato dal vecchio calcolo automatico); null se assente
   const rsEVStored=m=>{const v=numParse(m.rsEV);return isNaN(v)?null:v;};
   // una volta sola: le righe Rimborso Slot che non hanno ancora il campo EV ricevono il valore calcolato,
   // che poi resta fisso. Le righe nuove hanno sempre il campo (anche vuoto), quindi non vengono toccate.
-  function rsFreezeEV(){let n=0;moves.forEach(m=>{if(m.type==='Rimborso Slot'&&m.rsEV===undefined){m.rsEV=String(rsEVSuggest(m).ev);n++;}});return n;}
+  function rsFreezeEV(){let n=0;moves.forEach(m=>{if(m.type==='Rimborso Slot'&&m.rsEV===undefined){m.rsEV=String(rsEVSuggest(m).ev);n++;}});
+    // correzione una tantum: tutte le Betsson inserite fino al 24/09/2026 a 4€. Il segno rsEVb4 evita di
+    // riapplicarla, quindi un EV cambiato a mano dopo non viene sovrascritto; le righe nuove non vengono toccate.
+    moves.forEach(m=>{if(m.type==='Rimborso Slot'&&String(m.book||'').trim().toLowerCase()==='betsson'&&!m.rsEVb4&&(m.date||'')<='2026-09-24'){m.rsEV='4';m.rsEVb4=1;n++;}});
+    return n;}
   const fmtSigned=v=>(v>=0?'+':'')+fmt(v);
 
   // ---- valore del rimborso Fun ----

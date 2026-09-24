@@ -69,6 +69,7 @@
   .rs-overdue-row{background:rgba(240,180,60,.07);border-left:3px solid var(--amber)}
   .rs-overdue-row:hover{background:rgba(240,180,60,.12)}
   #rs-stat-profit,#rs-stat-ev,#rs-stat-diff{white-space:nowrap}
+  .fr-table th,.fr-table td{padding-left:4px;padding-right:4px}
   .rs-warn-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--amber);color:#1a1400;border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -888,7 +889,10 @@
       <div id="mv-pane-rimborso" class="mpane hidden">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px">
           <p class="sub" style="margin:0;flex:1 1 260px">Le righe con scadenza già passata e senza Bonus Monetizzato ancora inserito salgono in cima, come promemoria.</p>
-          <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
+          <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+            <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
+            <button class="btn ghost" id="btnFunRules" data-testid="btn-funrules">Regole bonus Fun</button>
+          </div>
         </div>
         <table>
           <thead><tr>
@@ -1579,6 +1583,25 @@
   </div>
 </div>
 
+<!-- ===== MODAL: regole bonus Fun per book ===== -->
+<div class="overlay hidden" id="modal-funrules">
+  <div class="modal" style="max-width:600px">
+    <h3>Regole bonus Fun per book</h3>
+    <p class="sub">Servono a calcolare quanto vale davvero il rimborso Fun nel valore atteso. Per i book senza regola il Fun vale il 6% del nominale (la tua media storica).</p>
+    <div style="overflow-x:auto">
+      <table class="fr-table">
+        <thead><tr><th>Book</th><th class="num">Rollover</th><th class="num">Cap €</th><th></th></tr></thead>
+        <tbody id="fr-rows" data-testid="fr-rows"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px"><button class="btn ghost" id="fr-add" data-testid="fr-add">+ Aggiungi regola</button></div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-funrules">Annulla</button>
+      <button class="btn" id="fr-save" data-testid="fr-save">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: movimenti da completare ===== -->
 <div class="overlay hidden" id="modal-drafts">
   <div class="modal" style="max-width:640px">
@@ -1723,6 +1746,7 @@
       localStorage.setItem('tk_cash_actual',JSON.stringify(cashActual));
       localStorage.setItem('tk_cash_actual_ts',JSON.stringify(cashActualTs));
       if(numParse(externalData.rsStake)>0)setRsStakeGlobal(externalData.rsStake,true);
+      if(externalData.rsFunRules&&typeof externalData.rsFunRules==='object')setRsFunRules(externalData.rsFunRules,true);
       if(Array.isArray(externalData.promos))localStorage.setItem('tk_promo',JSON.stringify(externalData.promos));
     } else {
       try{books=JSON.parse(localStorage.getItem('tk_books'));}catch(e){}
@@ -1844,7 +1868,7 @@
     const fp=(numParse(m.rsFunPct)||0)/100,fm=numParse(m.rsFunMax)||0;
     const real=rp>0?Math.min(rm,L*rp):0;
     const fun=fp>0?Math.min(fm,L*fp):0;
-    return -(1-RS_EV.rtp)*RS_EV.wager*S+RS_EV.pBust*(real+RS_EV.funValue*fun);
+    return -(1-RS_EV.rtp)*RS_EV.wager*S+RS_EV.pBust*(real+rsFunValue(fun,m.book));
   }
   // stake di gioco unico ("Il mio stake rimborso"): ogni promo usa il più basso tra questo e il
   // proprio limite (lo stake oltre il quale nessuno dei due rimborsi cresce più). Sincronizzato su Sheets.
@@ -1867,6 +1891,40 @@
   const round05=v=>{const r=Math.round(v*2)/2;return r===0?0:r;};
   function rsEV(m){const st=rsStakeOf(m);return{ev:round05(rsEVFor(st.S,m)),S:st.S,limited:st.limited};}
   const fmtSigned=v=>(v>=0?'+':'')+fmt(v);
+
+  // ---- valore del rimborso Fun ----
+  // Quota del bonus Fun che diventa soldi veri giocandolo a spin minimi (1/250 del bonus), per rollover
+  // (righe R) e cap di conversione in rapporto all'importo del bonus (colonne C, null = senza cap).
+  // Simulazione su 40.000 sessioni, RTP 95%, varianza alta. Es. 50€ a 35x con cap 100€ → circa il 19,5%.
+  const RS_FUN_TABLE={"R":[1,3,5,10,15,20,25,30,35,40,45,50,60],"C":[1,1.5,2,3,4,5,10,null],"v":[[0.8156,0.8895,0.9138,0.9279,0.9388,0.9476,0.9488,0.9488],[0.6013,0.7013,0.7466,0.79,0.822,0.8405,0.8466,0.8466],[0.4613,0.5616,0.6185,0.683,0.7293,0.754,0.7672,0.7673],[0.2875,0.3765,0.44,0.5277,0.5867,0.6192,0.6455,0.646],[0.2102,0.2865,0.3471,0.4377,0.4976,0.5325,0.5705,0.572],[0.1672,0.234,0.2903,0.3761,0.4335,0.4687,0.513,0.5148],[0.1403,0.1985,0.2488,0.3275,0.3808,0.4157,0.466,0.4691],[0.122,0.1742,0.2195,0.2911,0.3416,0.3767,0.431,0.4348],[0.1076,0.154,0.1948,0.2606,0.3085,0.3422,0.3983,0.4036],[0.0956,0.1369,0.1736,0.2345,0.2801,0.3129,0.3704,0.3758],[0.0849,0.1223,0.1557,0.2122,0.2553,0.2871,0.3458,0.3532],[0.0765,0.1106,0.1413,0.1932,0.2337,0.2644,0.3233,0.3312],[0.0636,0.0923,0.1186,0.1635,0.1989,0.2262,0.2828,0.2917]]};
+  function rsFunFrac(R,capRatio){
+    if(!(R>0))return Math.min(1,capRatio>0?capRatio:1);
+    const T=RS_FUN_TABLE,Rs=T.R,Cn=T.C.slice(0,-1);
+    const rowAt=j=>{const row=T.v[j];
+      if(!isFinite(capRatio))return row[row.length-1];
+      if(capRatio<=Cn[0])return row[0]*Math.max(0,capRatio)/Cn[0];
+      if(capRatio>=Cn[Cn.length-1])return row[Cn.length-1];
+      for(let i=1;i<Cn.length;i++)if(capRatio<=Cn[i]){const t=(capRatio-Cn[i-1])/(Cn[i]-Cn[i-1]);return row[i-1]+t*(row[i]-row[i-1]);}
+      return row[Cn.length-1];};
+    if(R<=Rs[0]){const v1=rowAt(0),v0=Math.min(1,isFinite(capRatio)?capRatio:1);return v0+(R/Rs[0])*(v1-v0);}
+    if(R>=Rs[Rs.length-1])return rowAt(Rs.length-1);
+    for(let j=1;j<Rs.length;j++)if(R<=Rs[j]){const t=(R-Rs[j-1])/(Rs[j]-Rs[j-1]);return rowAt(j-1)+t*(rowAt(j)-rowAt(j-1));}
+    return rowAt(Rs.length-1);
+  }
+  // regole per book (rollover + cap del bonus Fun). Senza regola il Fun vale il 6% del nominale (media storica).
+  let rsFunRules=(()=>{try{const r=JSON.parse(localStorage.getItem('tk_rs_funrules'));if(r&&typeof r==='object')return r;}catch(e){}return{betsson:{rollover:35,cap:100}};})();
+  function setRsFunRules(r,noSync){rsFunRules=r&&typeof r==='object'?r:{};localStorage.setItem('tk_rs_funrules',JSON.stringify(rsFunRules));if(!noSync)gsScheduleSync();}
+  const rsFunRuleFor=book=>rsFunRules[String(book||'').trim().toLowerCase()]||null;
+  function rsFunValue(fun,book){
+    if(!(fun>0))return 0;
+    const r=rsFunRuleFor(book);
+    if(!r)return fun*RS_EV.funValue;
+    return fun*rsFunFrac(numParse(r.rollover)||0,numParse(r.cap)>0?numParse(r.cap)/fun:Infinity);
+  }
+  function rsFunLabel(book){
+    const r=rsFunRuleFor(book);
+    return r?`${String(r.rollover).replace('.',',')}x${numParse(r.cap)>0?', cap '+fmt(numParse(r.cap)):', senza cap'}`:'6% del nominale (media storica)';
+  }
 
   // ---- tabs ----
   document.querySelectorAll('#main-tabs .tab').forEach(t=>t.addEventListener('click',()=>{
@@ -2112,7 +2170,7 @@
         `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${att.funAtteso?fmt(att.funAtteso):'–'}</td>`+
         `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):(att.netto>=0?'<span class="note" style="margin:0">non dovuto</span>':'<span class="note" style="margin:0">da inserire</span>')}</td>`+
         `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
-        `<td class="num" style="color:var(${ev.ev>=0?'--green':'--red'})" data-label="EV" title="Stake usato: ${fmt(ev.S)}${ev.limited?' (limite della promo)':''}">${fmtSigned(ev.ev)}</td>`+
+        `<td class="num" style="color:var(${ev.ev>=0?'--green':'--red'})" data-label="EV" title="Stake usato: ${fmt(ev.S)}${ev.limited?' (limite della promo)':''}${att.funAtteso||(numParse(m.rsFunPct)||0)>0?' · Fun: '+rsFunLabel(m.book):''}">${fmtSigned(ev.ev)}</td>`+
         `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
         `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
@@ -2220,12 +2278,14 @@
     const funThresh=funPct>0?funMax/funPct:0;
     const stakeMax=Math.max(realThresh,funThresh);
     $(prefix+'-stakemax').textContent=stakeMax>0?fmt(stakeMax):'—';
-    const r=rsEV({rsRealPct:val(prefix+'-realpct'),rsRealMax:val(prefix+'-realmax'),rsFunPct:val(prefix+'-funpct'),rsFunMax:val(prefix+'-funmax')});
+    const r=rsEV({rsRealPct:val(prefix+'-realpct'),rsRealMax:val(prefix+'-realmax'),rsFunPct:val(prefix+'-funpct'),rsFunMax:val(prefix+'-funmax'),book:val(prefix+'-book')});
     const el=$(prefix+'-evprev');el.textContent=fmtSigned(r.ev);el.className=r.ev>=0?'pos':'neg';
-    $(prefix+'-stakeused').textContent=fmt(r.S)+(r.limited?' (limite della promo)':' (il tuo stake)');
+    $(prefix+'-stakeused').textContent=fmt(r.S)+(r.limited?' (limite della promo)':' (il tuo stake)')+((numParse(val(prefix+'-funpct'))||0)>0?' · Fun: '+rsFunLabel(val(prefix+'-book')):'');
   }
   ['rs-realpct','rs-realmax','rs-funpct','rs-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rs')));
   ['rse-realpct','rse-realmax','rse-funpct','rse-funmax'].forEach(id=>$(id).addEventListener('input',()=>computeStakeMax('rse')));
+  $('rs-book').addEventListener('change',()=>computeStakeMax('rs'));
+  $('rse-book').addEventListener('change',()=>computeStakeMax('rse'));
 
   let rsSeq=0;
   function rsAddRow(idLabel,bookName,prefill){
@@ -2256,6 +2316,36 @@
     const el=$('rs-total');el.textContent=fmt(tot);el.className=Math.round(tot*100)>=0?'pos':'neg';
   }
   $('rs-rows').addEventListener('input',updateRsTotal);
+
+  // ---- regole bonus Fun: finestra di modifica ----
+  function frAddRow(book,rollover,cap){
+    const list=(books.length?books:DEFAULT_BOOKS).slice();
+    if(book&&!list.some(b=>b.toLowerCase()===String(book).toLowerCase()))list.push(book);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><select class="fr-book" style="min-width:0;max-width:128px;padding-left:8px;padding-right:22px">${list.map(b=>`<option value="${esc(b)}"${b.toLowerCase()===String(book||'').toLowerCase()?' selected':''}>${esc(b)}</option>`).join('')}</select></td>`+
+      `<td class="num"><input class="num fr-roll" style="max-width:52px;padding:8px 6px" value="${esch(rollover??'')}" placeholder="35"></td>`+
+      `<td class="num"><input class="num fr-cap" style="max-width:62px;padding:8px 6px" value="${esch(cap??'')}" placeholder="—"></td>`+
+      `<td><button class="btn ghost" style="padding:4px 10px" title="Rimuovi">✕</button></td>`;
+    tr.querySelector('button').addEventListener('click',()=>tr.remove());
+    $('fr-rows').appendChild(tr);
+  }
+  $('btnFunRules').addEventListener('click',()=>{
+    $('fr-rows').innerHTML='';
+    const list=books.length?books:DEFAULT_BOOKS;
+    Object.entries(rsFunRules).forEach(([k,r])=>frAddRow(list.find(b=>b.toLowerCase()===k)||k,r.rollover,r.cap));
+    $('modal-funrules').classList.remove('hidden');
+  });
+  $('fr-add').addEventListener('click',()=>frAddRow('','',''));
+  $('fr-save').addEventListener('click',()=>{
+    const r={};
+    [...$('fr-rows').querySelectorAll('tr')].forEach(tr=>{
+      const b=tr.querySelector('.fr-book').value.trim().toLowerCase();
+      const roll=numParse(tr.querySelector('.fr-roll').value),cap=numParse(tr.querySelector('.fr-cap').value);
+      if(!b||!(roll>=0))return;
+      r[b]={rollover:roll,cap:cap>0?cap:null};
+    });
+    setRsFunRules(r);$('modal-funrules').classList.add('hidden');renderMoves();
+  });
   $('rs-global-stake').addEventListener('change',()=>{
     if(!setRsStakeGlobal(val('rs-global-stake'))){alert('Inserisci uno stake valido, maggiore di zero.');}
     renderMoves();
@@ -2744,9 +2834,9 @@
   $('sort-tipos').addEventListener('click',()=>{tipos.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('sort-games').addEventListener('click',()=>{games.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('new-id').addEventListener('keydown',e=>{if(e.key==='Enter')$('add-id').click();});
-  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,rsStake:rsStakeGlobal},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
+  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,rsStake:rsStakeGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
   $('imp-json').addEventListener('click',()=>$('imp-file').click());
-  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
+  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
   $('wipe').addEventListener('click',()=>{if(confirm('Cancellare TUTTI i movimenti? (book e ID restano)')){moves=[];save();renderMoves();}});
   $('fix-orphan-pids').addEventListener('click',()=>{
     const validLabels=new Set(ids.map(x=>x.label));
@@ -3023,7 +3113,7 @@
         {range:GS_TABS.cashmoves.name+'!A1:A'+GS_TABS.cashmoves.maxRows,values:gsPad(cashmoves.map(b=>JSON.stringify(b)),GS_TABS.cashmoves.maxRows)},
         {range:GS_TABS.promos.name+'!A1:A'+GS_TABS.promos.maxRows,values:gsPad(promos.map(b=>JSON.stringify(b)),GS_TABS.promos.maxRows)},
         {range:GS_TABS.savedMultiples.name+'!A1:A'+GS_TABS.savedMultiples.maxRows,values:gsPad(savedMultiplesRaw.map(b=>JSON.stringify(b)),GS_TABS.savedMultiples.maxRows)},
-        {range:'Meta!A1:A6',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)]]}
+        {range:'Meta!A1:A7',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)],[JSON.stringify(rsFunRules)]]}
       ];
       await gsApi('/values:batchUpdate',{method:'POST',body:JSON.stringify({valueInputOption:'RAW',data})});
       localStorage.setItem('tk_gs_last_sync',new Date().toISOString());
@@ -3037,7 +3127,7 @@
   async function loadFromSheets(){
     if(!gsCfg||!gsCfg.enabled)return null;
     await gsEnsureTabs();
-    const ranges=[...Object.values(GS_TABS).map(t=>t.name+'!A:A'),'Meta!A1:A6'];
+    const ranges=[...Object.values(GS_TABS).map(t=>t.name+'!A:A'),'Meta!A1:A7'];
     const qs=ranges.map(r=>'ranges='+encodeURIComponent(r)).join('&');
     const res=await gsApi('/values:batchGet?'+qs,{method:'GET'});
     const vrs=res.valueRanges||[];
@@ -3050,7 +3140,8 @@
     try{pc=metaRows[3]?JSON.parse(metaRows[3][0]):null;}catch(e){pc=null;}
     try{cats=metaRows[4]?JSON.parse(metaRows[4][0]):{};}catch(e){cats={};}
     const rsStake=metaRows[5]?numParse(metaRows[5][0]):null;
-    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake};
+    let rsFunRulesIn=null;try{rsFunRulesIn=metaRows[6]?JSON.parse(metaRows[6][0]):null;}catch(e){rsFunRulesIn=null;}
+    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake,rsFunRules:rsFunRulesIn};
   }
   function gsScheduleSync(){
     if(!gsCfg||!gsCfg.enabled)return;

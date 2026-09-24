@@ -1955,7 +1955,7 @@
     const sortState=mvSort[mvActiveTab];
     if(mvActiveTab==='rimborso'){
       const today=new Date().toISOString().slice(0,10);
-      const needsAttn=m=>m.scadenza&&m.scadenza<today&&(m.rsBonusMon===undefined||m.rsBonusMon==='');
+      const needsAttn=m=>m.scadenza&&m.scadenza<today&&(m.rsBonusMon===undefined||m.rsBonusMon==='')&&rimborsoAttesi(m).netto<0;
       const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
       const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
       displayed=[...overdue,...rest];
@@ -2038,7 +2038,7 @@
       const p=profitOf(m);
       const att=rimborsoAttesi(m);
       const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
-      const overdue=m.scadenza&&m.scadenza<today&&!bmSet;
+      const overdue=m.scadenza&&m.scadenza<today&&!bmSet&&att.netto<0;
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
         `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Scaduta, manca ancora il Bonus Monetizzato">Da controllare</span>':''}</td>`+
@@ -2047,7 +2047,7 @@
         `<td class="num ${att.netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(att.netto)}</td>`+
         `<td class="num" data-label="Real atteso" style="color:var(--amber)">${att.realAtteso?fmt(att.realAtteso):'–'}</td>`+
         `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${att.funAtteso?fmt(att.funAtteso):'–'}</td>`+
-        `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):'<span class="note" style="margin:0">da inserire</span>'}</td>`+
+        `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):(att.netto>=0?'<span class="note" style="margin:0">non dovuto</span>':'<span class="note" style="margin:0">da inserire</span>')}</td>`+
         `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
         `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
         `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;

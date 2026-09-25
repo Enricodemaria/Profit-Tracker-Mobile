@@ -79,9 +79,9 @@
   .rs-group.rs-open td{border-bottom-color:transparent}
   .rs-child td{background:rgba(255,255,255,.02)}
   .rs-child td:first-child{padding-left:24px}
-  #rs-moves-rows tr.rs-child{margin-left:14px;border-style:dashed;background:rgba(255,255,255,.02)}
-  #rs-moves-rows tr.rs-child td{background:none}
-  #rs-moves-rows tr.rs-child td:first-child{padding-left:0}
+  #rs-moves-rows tr.rs-child,#moves-rows tr.rs-child{margin-left:14px;border-style:dashed;background:rgba(255,255,255,.02)}
+  #rs-moves-rows tr.rs-child td,#moves-rows tr.rs-child td{background:none}
+  #rs-moves-rows tr.rs-child td:first-child,#moves-rows tr.rs-child td:first-child{padding-left:0}
   .rs-warn-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--amber);color:#1a1400;border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -2128,7 +2128,7 @@
       renderMaggiorateRows(displayed);
     } else {
       displayed=mvApplySort(displayed,sortState.col,sortState.dir);
-      renderMatchedRows(displayed);
+      renderMatchedRows(displayed,sortState);
     }
 
     $('mv-filter-count').textContent=(from||to||fTipo||fBook||fSearch)?`${displayed.length} di ${scopedMoves.length} movimenti`:'';
@@ -2147,9 +2147,8 @@
     const td=$('s-today');td.textContent=fmt(todayGain);td.className='big '+(Math.round(todayGain*100)>=0?'pos':'neg');
   }
 
-  function renderMatchedRows(displayed){
-    const tb=$('moves-rows');tb.innerHTML='';
-    displayed.forEach(m=>{
+  // una riga per movimento (da sola, o dentro un gruppo aperto)
+  function mbRow(m,child){
       const p=profitOf(m);
       const tr=document.createElement('tr');tr.className='clickable';
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td><td data-label="Tipologia">${esc(m.type)}</td><td data-label="Gioco">${esc(m.game)}</td><td data-label="Info">${esc(m.info)}</td>`+
@@ -2163,7 +2162,49 @@
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openSingle(m.uid);});
       tr.addEventListener('click',()=>openSingle(m.uid));
-      tb.appendChild(tr);
+      if(child)tr.classList.add('rs-child');
+      return tr;
+  }
+  // movimenti salvati insieme dall'"Inserimento multiplo" (batchGroup). Per quelli vecchi: stessa data, book,
+  // tipologia, gioco, info e note, ma solo se coinvolgono almeno due ID diverse (due giocate della stessa ID restano separate)
+  const mbExpanded=new Set();
+  const mbGroupKey=m=>m.batchGroup?('g:'+m.batchGroup):('h:'+[m.date,m.book,m.type,m.game,m.info||'',(m.notes||'').trim().toLowerCase()].join('|'));
+  function mbGroupRow(k,g){
+    const sum=fn=>g.reduce((s,m)=>s+fn(m),0),n=v=>numParse(v)||0;
+    const p=sum(profitOf),rel=sum(m=>n(m.reload));
+    const open=mbExpanded.has(k),f=g[0];
+    const pids=[...new Set(g.map(m=>m.pid))];
+    const lbl=pids.length===g.length?`${g.length} ID`:`${g.length} righe`;
+    const tr=document.createElement('tr');tr.className='clickable rs-group'+(open?' rs-open':'');
+    tr.innerHTML=`<td data-label="Data">${esc(f.date)}</td><td data-label="ID"><b>${lbl}</b> <span class="note" style="margin:0">${esc(pids.join(', '))}</span></td><td data-label="Book">${esc(f.book)}</td><td data-label="Tipologia">${esc(f.type)}</td><td data-label="Gioco">${esc(f.game)}</td><td data-label="Info">${esc(f.info)}</td>`+
+      `<td class="num" data-label="Iniziale">${fmt(sum(m=>n(m.start)))}</td>`+
+      `<td class="num" data-label="Finale">${fmt(sum(m=>n(m.end)))}</td>`+
+      `<td class="num" data-label="Bonus" style="color:var(--amber)">${fmt(sum(m=>n(m.bonus)))}</td>`+
+      `<td class="num" data-label="Ricaricato"${rel?' style="color:var(--blue)"':''}>${fmt(rel)}</td>`+
+      `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
+      `<td data-label="Note" style="white-space:nowrap">${esc(f.notes)}</td>`+
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="mb-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
+    tr.addEventListener('click',()=>{open?mbExpanded.delete(k):mbExpanded.add(k);renderMoves();});
+    return tr;
+  }
+  function renderMatchedRows(displayed,sortState){
+    const tb=$('moves-rows');tb.innerHTML='';
+    const map=new Map();
+    displayed.forEach(m=>{const k=mbGroupKey(m);if(!map.has(k))map.set(k,[]);map.get(k).push(m);});
+    let units=[];
+    map.forEach((g,k)=>{
+      const real=g.length>1&&(k.startsWith('g:')||new Set(g.map(m=>m.pid)).size>1);
+      if(real)units.push({k,g});else g.forEach(m=>units.push({k:null,g:[m]}));
+    });
+    const NUM=new Set(['profit','start','end','bonus','reload']);
+    const col=sortState?sortState.col:'date',dir=sortState?sortState.dir:-1;
+    const gval=g=>NUM.has(col)?g.reduce((s,m)=>s+mvSortValue(m,col),0):mvSortValue(g[0],col);
+    units.forEach(u=>u.v=gval(u.g));
+    units.sort((x,y)=>x.v<y.v?-dir:x.v>y.v?dir:0);
+    units.forEach(({k,g})=>{
+      if(!k){tb.appendChild(mbRow(g[0]));return;}
+      tb.appendChild(mbGroupRow(k,g));
+      if(mbExpanded.has(k))[...g].sort((x,y)=>(x.pid||'').localeCompare(y.pid||'')).forEach(m=>tb.appendChild(mbRow(m,true)));
     });
     $('moves-empty').classList.toggle('hidden',displayed.length>0);
   }
@@ -2570,7 +2611,7 @@
     $('modal-batch2').classList.remove('hidden');
   }
   $('batch-save').addEventListener('click',()=>{
-    const common={date:val('b-date'),type:val('b-type'),game:val('b-game'),info:val('b-info'),notes:val('b-notes')};
+    const common={batchGroup:uid(),date:val('b-date'),type:val('b-type'),game:val('b-game'),info:val('b-info'),notes:val('b-notes')};
     let added=0;
     [...$('batch-rows').querySelectorAll('tr')].forEach(tr=>{
       const k=tr.dataset.k;

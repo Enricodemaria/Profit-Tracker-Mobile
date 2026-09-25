@@ -3056,7 +3056,7 @@
     promos:{name:'Promos',maxRows:500},
     savedMultiples:{name:'SavedMultiples',maxRows:500}
   };
-  let gsCfg=null,gsToken=null,gsTokenExp=0,gsTimer=null,gsSyncing=false;
+  let gsCfg=null,gsToken=null,gsTokenExp=0,gsTimer=null,gsSyncing=false,gsPending=false;
 
   function gsLoadCfg(){
     try{gsCfg=JSON.parse(localStorage.getItem('tk_gs_cfg'))||null;}catch(e){gsCfg=null;}
@@ -3173,8 +3173,8 @@
   }
   function gsScheduleSync(){
     if(!gsCfg||!gsCfg.enabled)return;
-    clearTimeout(gsTimer);
-    gsTimer=setTimeout(()=>{saveToSheets().then(()=>gsStatus('Sincronizzato con Google Sheets.',true)).catch(e=>gsStatus('Errore: '+e.message,false));},2500);
+    clearTimeout(gsTimer);gsPending=true;
+    gsTimer=setTimeout(()=>{saveToSheets().then(()=>{gsPending=false;gsStatus('Sincronizzato con Google Sheets.',true);}).catch(e=>gsStatus('Errore: '+e.message,false));},2500);
   }
   function gsStatus(msg,ok){
     const el=$('gs-status');if(!el)return;
@@ -3878,9 +3878,6 @@
     return 0;
   }
   function calcAccaLegs(S,comb,mode,V,c,boost){
-    boost=boost||0;
-    const BW=(mode==='sr'?S*comb:S*(comb-1))+boost;
-    const BL= (mode==='snr'||mode==='sr')?0 : mode==='refund'?(-S+V) : -S;
     const n=mLegCount;const legs=[];
     for(let k=0;k<n;k++){const lk=legLock[k]||{};
       const legComm=val('m-comm-'+k);
@@ -3892,6 +3889,15 @@
         actualLiab: lk.result? lk.actualLiab : (bankedSnap? bankedSnap.liab : undefined),
         actualWin: lk.result? lk.actualWin : (bankedSnap? bankedSnap.win : undefined),
         banked: !!bankedSnap});}
+    return accaCore(S,comb,mode,V,c,boost,legs);
+  }
+  // motore unico della multipla: lo usano sia il calcolatore sia le notifiche Telegram,
+  // così gli importi inviati sono sempre gli stessi mostrati a schermo
+  function accaCore(S,comb,mode,V,c,boost,legs){
+    boost=boost||0;
+    const BW=(mode==='sr'?S*comb:S*(comb-1))+boost;
+    const BL= (mode==='snr'||mode==='sr')?0 : mode==='refund'?(-S+V) : -S;
+    const n=legs.length;
     const covLoss=(leg,L)=> leg.actualLiab!==undefined? leg.actualLiab : (leg.type==='banca'? L*(leg.Q-1) : L);
     const covWin=(leg,L)=> leg.actualWin!==undefined? leg.actualWin : (leg.type==='banca'? L*(1-leg.c) : L*(leg.Q-1));
     let LIAB0=0, deadAt=-1;
@@ -4241,30 +4247,40 @@
     });
     return n;
   }
-  function calcAccaLegsData(d){
-    const n=d.legsCount;
-    const legs=d.legs.map(l=>({type:l.result?l.type:l.ctype,Q:l.result?l.q:numv(l.cq),result:l.result||null,lockedStake:l.stake||0}));
-    let comb=1;d.legs.forEach(l=>{const o=numv(l.bo);comb*=(o>0?o:1);});
-    const S=numv(d.stake),mode=d.mode,c=numv(d.comm2)/100;
-    let V=0;if(mode==='refund'){const rp=numv(d.refpct)/100;V=d.reftype==='freebet'?S*rp*(numv(d.ret)/100):S*rp;}
-    const BW=mode==='sr'?S*comb:S*(comb-1);
-    const BL=(mode==='snr'||mode==='sr')?0:mode==='refund'?(-S+V):-S;
-    const covLoss=(leg,L)=>leg.type==='banca'?L*(leg.Q-1):L;
-    let LIAB0=0,deadAt=-1;
-    for(let k=0;k<n;k++){if(legs[k].result==='book')LIAB0+=covLoss(legs[k],legs[k].lockedStake);else if(legs[k].result==='banca'){deadAt=k;break;}}
-    const stakes=new Array(n).fill(0);
-    for(let k=0;k<n;k++)if(legs[k].result)stakes[k]=legs[k].lockedStake;
-    if(deadAt<0){
-      const unlocked=[];for(let k=0;k<n;k++)if(!legs[k].result)unlocked.push(k);
-      let alpha=0,beta=LIAB0;
-      unlocked.forEach(k=>{const leg=legs[k];let a,m;
-        if(leg.type==='banca'){a=(leg.Q-1)/(1-c);m=1/(1-c);}else{a=(leg.Q>1)?1/(leg.Q-1):0;m=a;}
-        leg._m=m;alpha=(1+a)*alpha+a;beta=(1+a)*beta-a*BL;});
-      const P=(alpha+1)!==0?(BW-beta)/(alpha+1):0;
-      let LIAB=LIAB0;
-      unlocked.forEach(k=>{const leg=legs[k];const base=P-BL+LIAB;const L=leg._m*base;stakes[k]=L;LIAB+=covLoss(leg,L);});
-    }
-    return {stakes,legs,deadAt};
+  // stessi ingressi che il calcolatore legge dai campi, ricavati dalla multipla salvata:
+  // commissione per gara, Potenzia, rimborso, bancate congelate ("B") e importi reali piazzati
+  function accaInputsFromData(d){
+    const n=d.legsCount||(d.legs||[]).length;
+    let comb=1;for(let k=0;k<n;k++){const o=numv((d.legs[k]||{}).bo);comb*=(o>0?o:1);}
+    const S=numv(d.stake)||0,mode=d.mode,c=(numv(d.comm2)||0)/100;
+    let V=0;if(mode==='refund'){const ra=numv(d.refundamt||d.refpct||'10')||0;V=d.reftype==='freebet'?ra*((numv(d.ret)||0)/100):ra;}
+    let boost=0;
+    if(d.boostOn){const bv=numv(d.boostValue)||0,gross=S*comb;
+      if(bv)boost=d.boostType==='lorda'?gross*(bv/100):d.boostType==='bonus'?bv:(gross-S)*(bv/100);}
+    const legs=[];
+    for(let k=0;k<n;k++){const l=d.legs[k]||{};
+      const legC=l.comm?numParse(String(l.comm))/100:c;
+      const snap=(!l.result&&l.banked)?l.bankedSnap:null;
+      legs.push({type:l.result?l.type:l.ctype,Q:l.result?l.q:numv(l.cq),result:l.result||null,
+        lockedStake:l.result?(l.stake||0):(snap?snap.stake:0),c:isFinite(legC)?legC:c,
+        actualLiab:l.result?l.actualLiab:(snap?snap.liab:undefined),
+        actualWin:l.result?l.actualWin:(snap?snap.win:undefined),banked:!!snap});}
+    return {S,comb,mode,V,c,boost,legs};
+  }
+  function calcAccaLegsData(d){const x=accaInputsFromData(d);return accaCore(x.S,x.comb,x.mode,x.V,x.c,x.boost,x.legs);}
+  // prima di una notifica automatica riprendo le multiple aggiornate da Sheets: se sono state modificate
+  // da un altro dispositivo, una scheda aperta da ore avrebbe importi vecchi. Non lo faccio se questo
+  // dispositivo ha modifiche non ancora inviate, per non sovrascriverle.
+  async function tgRefreshMultiples(){
+    if(!(gsCfg&&gsCfg.enabled)||gsPending||typeof loadFromSheets!=='function')return;
+    try{
+      const data=await loadFromSheets();
+      if(!data||!Array.isArray(data.savedMultiples))return;
+      const prev=new Map(savedMultiples.map(m=>[m.id,m]));
+      data.savedMultiples.forEach(m=>{const p=prev.get(m.id);if(p){m.notified={...(m.notified||{}),...(p.notified||{})};m.notifiedPre={...(m.notifiedPre||{}),...(p.notifiedPre||{})};}});
+      savedMultiples=data.savedMultiples;localStorage.setItem('mb_saved_multiples',JSON.stringify(savedMultiples));
+      if(typeof renderSaved==='function')renderSaved();
+    }catch(e){}
   }
   function tgMultTextFromSaved(m){
     const d=m.data;
@@ -4307,6 +4323,9 @@
   async function tgCheckFinished(){
     if(!tgCfg.watch||!tgCfg.token||!tgCfg.chat)return;
     const now=Date.now(), offset=(tgCfg.hours||2)*3600000;
+    const due=()=>savedMultiples.some(m=>multStatus(m.data)==='in corso'&&m.data.legs.some((l,k)=>{if(l.result||!l.dt||(m.notified||{})[k])return false;const st=new Date(l.dt).getTime();return !isNaN(st)&&now>=st+offset;}));
+    if(!due())return;
+    await tgRefreshMultiples();
     let changed=false;
     for(const m of savedMultiples){
       if(multStatus(m.data)!=='in corso')continue;
@@ -4345,6 +4364,10 @@
   async function tgCheckPreStart(){
     if(!tgCfg.watch||!tgCfg.token||!tgCfg.chat)return;
     const now=Date.now(), preOffset=3600000;
+    const duePre=()=>savedMultiples.some(m=>{if(multStatus(m.data)!=='in corso')return false;const legs=m.data.legs;let c=-1;for(let k=0;k<legs.length;k++){if(!legs[k].result){c=k;break;}}if(c<0)return false;
+      for(let j=c+1;j<legs.length;j++){const nl=legs[j];if(nl.result||!nl.dt)continue;const st=new Date(nl.dt).getTime();if(isNaN(st))return false;return now<st&&now>=st-preOffset&&!(m.notifiedPre||{})[j];}return false;});
+    if(!duePre())return;
+    await tgRefreshMultiples();
     let changed=false;
     for(const m of savedMultiples){
       if(multStatus(m.data)!=='in corso')continue;

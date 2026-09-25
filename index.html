@@ -1088,10 +1088,11 @@
       <h2 style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span><span class="dot"></span>Depositi e prelievi</span>
         <span style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn ghost" id="open-cash-list" data-testid="open-cash-list">Elenco movimenti</button>
+          <button class="btn ghost" id="open-cash-reset" data-testid="open-cash-reset">Reimposta saldo</button>
           <button class="btn" id="open-cash-modal" data-testid="open-cash-modal">+ Nuovo movimento</button>
         </span>
       </h2>
-      <p class="sub">La "pos. netta" è saldo attuale − depositi + prelievi nel periodo scelto: se un book/conto non ha ancora nessun movimento di cassa registrato, resta a € 0,00 per non mostrare un numero senza senso. Il saldo attuale arriva dai movimenti registrati o dall'estensione Matched Betting Companion.</p>
+      <p class="sub">Book: scrivi il saldo nella casella e premi Invio. La pos. netta è saldo − depositi + prelievi nel periodo, e riparte dall'ultimo "Reimposta saldo". Conti: il saldo è calcolato dall'ultimo "Reimposta saldo" (o dal saldo di partenza) con prelievi, depositi e giroconti successivi. Se qualcosa non torna, usa "Reimposta saldo".</p>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end">
         <div class="field" style="max-width:150px;margin-bottom:0"><label>Pos. netta da</label><input type="date" id="cb-from" data-testid="cb-from"></div>
         <div class="field" style="max-width:150px;margin-bottom:0"><label>a</label><input type="date" id="cb-to" data-testid="cb-to"></div>
@@ -1102,7 +1103,7 @@
       </div>
       <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>Conto/Book</th><th class="num">Saldo attuale</th><th class="num">Pos. netta</th><th>Ultimo aggiornamento</th></tr></thead>
+          <thead><tr><th>Conto/Book</th><th class="num">Saldo</th><th class="num">Pos. netta</th><th>Aggiornamento</th></tr></thead>
           <tbody id="cash-summary-rows" data-testid="cash-summary-rows"></tbody>
         </table>
       </div>
@@ -1137,20 +1138,22 @@
             <option value="prelievo">Prelievo (da un book a un conto)</option>
             <option value="deposito">Deposito (da un conto a un book)</option>
             <option value="giroconto">Giroconto (tra due conti)</option>
+            <option value="reset">Reimposta saldo</option>
           </select>
         </div>
         <div><label>Data</label><input type="date" id="c-date" data-testid="c-date"></div>
         <div class="full" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-          <div style="flex:1;min-width:140px"><label>ID origine</label><select id="c-id" data-testid="c-id"></select></div>
+          <div style="flex:1;min-width:140px"><label id="c-id-label">ID origine</label><select id="c-id" data-testid="c-id"></select></div>
+          <div style="flex:1;min-width:120px" class="hidden" id="c-reskind-box"><label>Book o conto</label><select id="c-reskind" data-testid="c-reskind"><option value="book">Book</option><option value="conto">Conto</option></select></div>
           <div style="flex:1;min-width:140px" id="c-book-box"><label id="c-book-label">Book origine</label><select id="c-book" data-testid="c-book"></select></div>
           <div style="flex:1;min-width:140px" class="hidden" id="c-conto-box"><label id="c-conto-label">Conto origine</label><select id="c-conto" data-testid="c-conto"></select></div>
         </div>
-        <div class="full" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+        <div class="full" id="c-dest-row" style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
           <div style="flex:1;min-width:140px"><label>ID destinazione</label><select id="c-id2" data-testid="c-id2"></select></div>
           <div style="flex:1;min-width:140px" id="c-book2-box"><label id="c-book2-label">Book destinazione</label><select id="c-book2" data-testid="c-book2"></select></div>
           <div style="flex:1;min-width:140px" class="hidden" id="c-conto2-box"><label id="c-conto2-label">Conto destinazione</label><select id="c-conto2" data-testid="c-conto2"></select></div>
         </div>
-        <div><label>Importo €</label><input class="num" id="c-amount" data-testid="c-amount" placeholder="0"></div>
+        <div><label id="c-amount-label">Importo €</label><input class="num" id="c-amount" data-testid="c-amount" placeholder="0"></div>
         <div class="full"><label>Note</label><input id="c-notes" data-testid="c-notes" placeholder="facoltativo"></div>
       </div>
       <div class="modal-actions">
@@ -1702,7 +1705,7 @@
   const cssv=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
   const COLORS=()=>[cssv('--green'),cssv('--blue'),cssv('--amber'),cssv('--red'),cssv('--purple'),cssv('--accent'),cssv('--muted')];
 
-  let books=[],ids=[],moves=[],drafts=[],recurring=[],cashmoves=[],cashStart={},cashActual={},cashActualTs={},editUid=null,editingId=null,selYear='',mgEditUid=null;
+  let books=[],ids=[],moves=[],drafts=[],recurring=[],cashmoves=[],cashStart={},cashActual={},cashActualTs={},cashManual={},cashManualTs={},editUid=null,editingId=null,selYear='',mgEditUid=null;
   const IDFIELDS=[['id-nome','nome'],['id-cognome','cognome'],['id-tel','tel'],['id-email','email'],['id-nascita','nascita'],['id-indirizzo','indirizzo'],['id-cap','cap'],['id-paese','paese'],['id-ci-num','ci_num'],['id-ci-ril','ci_ril'],['id-ci-sca','ci_sca'],['id-cf','cf'],['id-pp-nome','pp_nome'],['id-pp-pass','pp_pass'],['id-pin','pin'],['id-cc-num','cc_num'],['id-cc-sca','cc_sca'],['id-cc-cvv','cc_cvv'],['id-iban','iban']];
   const normId=x=>(typeof x==='string')?{key:uid(),label:x,books:[]}:Object.assign({key:uid(),books:[]},x);
   function load(externalData){
@@ -1740,6 +1743,7 @@
       cashStart=(externalData.cashStart&&typeof externalData.cashStart==='object')?externalData.cashStart:{};
       cashActual=(externalData.cashActual&&typeof externalData.cashActual==='object')?externalData.cashActual:{};
       cashActualTs=(externalData.cashActualTs&&typeof externalData.cashActualTs==='object')?externalData.cashActualTs:{};
+      if(externalData.cashManual&&typeof externalData.cashManual==='object'){cashManual=externalData.cashManual.v||{};cashManualTs=externalData.cashManual.ts||{};localStorage.setItem('tk_cash_manual',JSON.stringify({v:cashManual,ts:cashManualTs}));}
       // rispecchia subito nel localStorage: resta un appoggio invisibile, usato se Sheets non è raggiungibile
       localStorage.setItem('tk_books',JSON.stringify(books));
       localStorage.setItem('tk_tipos',JSON.stringify(tipos));
@@ -1771,6 +1775,7 @@
       try{cashStart=JSON.parse(localStorage.getItem('tk_cash_start'))||{};}catch(e){cashStart={};}
       try{cashActual=JSON.parse(localStorage.getItem('tk_cash_actual'))||{};}catch(e){cashActual={};}
       try{cashActualTs=JSON.parse(localStorage.getItem('tk_cash_actual_ts'))||{};}catch(e){cashActualTs={};}
+      try{const cm=JSON.parse(localStorage.getItem('tk_cash_manual'));if(cm&&typeof cm==='object'){cashManual=cm.v||{};cashManualTs=cm.ts||{};}}catch(e){}
     }
     if(!tipos.includes('Maggiorate')){tipos.push('Maggiorate');localStorage.setItem('tk_tipos',JSON.stringify(tipos));}
     // migrazione una tantum: la vecchia lista "maggiorate" separata confluisce nei movimenti veri
@@ -1792,6 +1797,11 @@
     if(repaired)localStorage.setItem('tk_moves',JSON.stringify(moves));
     // sincronizza su Sheets solo se i dati arrivano da Sheets: mai spingere dati locali forse vecchi
     if(rsFreezeEV()){localStorage.setItem('tk_moves',JSON.stringify(moves));if(externalData)gsScheduleSync();}
+    // saldi dei book: da ora solo a mano. La prima volta si parte dagli ultimi saldi noti
+    if(!localStorage.getItem('tk_cash_manual')){
+      Object.keys(cashActual).forEach(k=>{if(k.split('|')[1]==='book'){cashManual[k]=cashActual[k];if(cashActualTs[k])cashManualTs[k]=cashActualTs[k];}});
+      localStorage.setItem('tk_cash_manual',JSON.stringify({v:cashManual,ts:cashManualTs}));
+    }
   }
   function save(){
     localStorage.setItem('tk_books',JSON.stringify(books));
@@ -1805,6 +1815,7 @@
     localStorage.setItem('tk_cash_start',JSON.stringify(cashStart));
     localStorage.setItem('tk_cash_actual',JSON.stringify(cashActual));
     localStorage.setItem('tk_cash_actual_ts',JSON.stringify(cashActualTs));
+    localStorage.setItem('tk_cash_manual',JSON.stringify({v:cashManual,ts:cashManualTs}));
     autobkSchedule();
     gsScheduleSync();
   }
@@ -2691,7 +2702,7 @@
   });
 
   // ---------- depositi e prelievi ----------
-  const CASH_LABEL={deposito:'Deposito',prelievo:'Prelievo',giroconto:'Giroconto'};
+  const CASH_LABEL={deposito:'Deposito',prelievo:'Prelievo',giroconto:'Giroconto',reset:'Reimposta saldo'};
   function cashTarget(m){return m.target||m.book||'';}
   function cashKindOf(m){return m.kind||'book';}
   function cashKey(pid,kind,target){return (pid||'')+'|'+(kind||'book')+'|'+(target||'');}
@@ -2702,7 +2713,7 @@
     if(oldLabel===newLabel)return;
     moves.forEach(m=>{if(m.pid===oldLabel)m.pid=newLabel;});
     cashmoves.forEach(m=>{if(m.pid===oldLabel)m.pid=newLabel;});
-    [cashActual,cashActualTs,cashStart].forEach(store=>{
+    [cashActual,cashActualTs,cashStart,cashManual,cashManualTs].forEach(store=>{
       Object.keys(store).forEach(k=>{
         const parts=k.split('|');
         if(parts[0]!==oldLabel)return;
@@ -2719,7 +2730,7 @@
     moves.forEach(m=>{if(m.book===oldName)m.book=newName;});
     cashmoves.forEach(m=>{if(cashKindOf(m)==='book'&&cashTarget(m)===oldName){if(m.target!==undefined)m.target=newName;else m.book=newName;}});
     ids.forEach(x=>{(x.books||[]).forEach(b=>{if(b.book===oldName)b.book=newName;});});
-    [cashActual,cashActualTs,cashStart].forEach(store=>{
+    [cashActual,cashActualTs,cashStart,cashManual,cashManualTs].forEach(store=>{
       Object.keys(store).forEach(k=>{
         const parts=k.split('|');
         if(parts[1]!=='book'||parts[2]!==oldName)return;
@@ -2730,12 +2741,41 @@
     });
   }
   function contiOf(pidLabel){const rec=ids.find(x=>x.label===pidLabel);return (rec&&rec.contos)?rec.contos.map(c=>c.name).filter(Boolean):[];}
+  // ---- saldi: "Reimposta saldo" e saldo calcolato dei conti ----
+  const fmtDateIt=d=>{const x=new Date(d);return isNaN(x)?(d||''):x.toLocaleDateString('it-IT');};
+  // m viene dopo il reset r? A parità di data conta l'ordine di inserimento (ts)
+  function cashAfter(m,r){
+    if(!r)return true;
+    if((m.date||'')!==(r.date||''))return (m.date||'')>(r.date||'');
+    return (m.ts||0)>(r.ts||0);
+  }
+  // ultimo "Reimposta saldo" di un book/conto (fino alla data indicata, se c'è)
+  function cashLastReset(k,upto){
+    let best=null;
+    cashmoves.forEach(m=>{
+      if(m.type!=='reset'||cashKey(m.pid,cashKindOf(m),cashTarget(m))!==k)return;
+      if(upto&&(m.date||'')>upto)return;
+      if(!best||cashAfter(m,best))best=m;
+    });
+    return best;
+  }
+  // saldo di un conto: ultimo reset (o saldo di partenza) + entrate − uscite successive
+  function contoBalance(k){
+    const r=cashLastReset(k);
+    let bal=r?(numParse(r.amount)||0):(numParse(cashStart[k])||0);
+    cashmoves.forEach(m=>{
+      if(m.type==='reset'||cashKey(m.pid,cashKindOf(m),cashTarget(m))!==k||!cashAfter(m,r))return;
+      const a=numParse(m.amount)||0;
+      if(m.type==='deposito')bal+=a;else if(m.type==='prelievo')bal-=a;
+    });
+    return {bal,r};
+  }
   function renderCash(){
     const tb=$('cash-rows');tb.innerHTML='';
     const sorted=[...cashmoves].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     sorted.forEach(m=>{
       const tr=document.createElement('tr');
-      const sign=m.type==='prelievo'?'-':(m.type==='deposito'?'+':'');
+      const sign=m.type==='prelievo'?'-':(m.type==='deposito'?'+':(m.type==='reset'?'= ':''));
       const cls=m.type==='prelievo'?'neg':(m.type==='deposito'?'pos':'');
       const kindTag=cashKindOf(m)==='conto'?'<span class="note" style="margin:0">conto</span> ':'';
       tr.innerHTML=`<td>${esc(m.date)}</td><td>${esc(m.pid)}</td><td>${kindTag}${esc(cashTarget(m))}</td><td>${esc(CASH_LABEL[m.type]||m.type)}</td>`+
@@ -2758,17 +2798,25 @@
     fillSelect($(contoSel),contiOf(val(idSel)));
   }
   function kindsForType(type){
+    if(type==='reset')return {origin:val('c-reskind')||'book',dest:null};
     if(type==='prelievo')return {origin:'book',dest:'conto'};
     if(type==='deposito')return {origin:'conto',dest:'book'};
     return {origin:'conto',dest:'conto'}; // giroconto
   }
   function updateCashFormKinds(){
-    const {origin,dest}=kindsForType(val('c-type'));
+    const type=val('c-type'),isReset=type==='reset';
+    const {origin,dest}=kindsForType(type);
     $('c-book-box').classList.toggle('hidden',origin!=='book');
     $('c-conto-box').classList.toggle('hidden',origin!=='conto');
-    $('c-book2-box').classList.toggle('hidden',dest!=='book');
-    $('c-conto2-box').classList.toggle('hidden',dest!=='conto');
+    $('c-reskind-box').classList.toggle('hidden',!isReset);
+    $('c-dest-row').classList.toggle('hidden',isReset);
+    if(!isReset){$('c-book2-box').classList.toggle('hidden',dest!=='book');$('c-conto2-box').classList.toggle('hidden',dest!=='conto');}
+    $('c-id-label').textContent=isReset?'ID':'ID origine';
+    $('c-book-label').textContent=isReset?'Book':'Book origine';
+    $('c-conto-label').textContent=isReset?'Conto':'Conto origine';
+    $('c-amount-label').textContent=isReset?'Nuovo saldo €':'Importo €';
   }
+  $('c-reskind').addEventListener('change',updateCashFormKinds);
   $('c-type').addEventListener('change',updateCashFormKinds);
   $('c-id').addEventListener('change',()=>refreshContoSelect('c-id','c-conto'));
   $('c-id2').addEventListener('change',()=>refreshContoSelect('c-id2','c-conto2'));
@@ -2781,6 +2829,15 @@
   $('c-save').addEventListener('click',()=>{
     const type=val('c-type'),date=val('c-date'),amount=val('c-amount'),notes=val('c-notes');
     if(!date||!amount){alert('Imposta almeno data e importo.');return;}
+    if(type==='reset'){
+      const kind=val('c-reskind')||'book',pid=val('c-id'),target=kind==='conto'?val('c-conto'):val('c-book');
+      if(!target){alert(kind==='conto'?'Questa ID non ha conti associati: aggiungine uno in Anagrafica ID.':'Scegli il book.');return;}
+      const v=numParse(amount);if(isNaN(v)){alert('Importo non valido.');return;}
+      cashmoves.unshift({uid:uid(),date,pid,kind,target,type:'reset',amount,notes,ts:Date.now()});
+      // su un book il nuovo saldo diventa anche il saldo attuale (se non ne hai già segnato uno più recente)
+      if(kind==='book'){const k=cashKey(pid,'book',target),last=(cashManualTs[k]||'').slice(0,10);if(!last||date>=last){cashManual[k]=v;cashManualTs[k]=new Date().toISOString();}}
+      save();renderCash();renderCashSummary();$('modal-cash').classList.add('hidden');return;
+    }
     const {origin:originKind,dest:destKind}=kindsForType(type);
     const pid1=val('c-id'),pid2=val('c-id2');
     const target1=originKind==='conto'?val('c-conto'):val('c-book');
@@ -2789,10 +2846,11 @@
     if(destKind==='conto'&&!target2){alert('L\'ID destinazione non ha conti associati: aggiungine uno in Anagrafica ID.');return;}
     if(pid1===pid2&&originKind===destKind&&target1===target2){alert('Origine e destinazione coincidono.');return;}
     const linkId=uid();
-    cashmoves.unshift({uid:uid(),date,pid:pid1,kind:originKind,target:target1,type:'prelievo',amount,notes:(notes?notes+' ':'')+`(${CASH_LABEL[type]} → ${pid2||'—'} / ${target2||'—'})`,linkId});
-    cashmoves.unshift({uid:uid(),date,pid:pid2,kind:destKind,target:target2,type:'deposito',amount,notes:(notes?notes+' ':'')+`(${CASH_LABEL[type]} ← ${pid1||'—'} / ${target1||'—'})`,linkId});
+    cashmoves.unshift({uid:uid(),ts:Date.now(),date,pid:pid1,kind:originKind,target:target1,type:'prelievo',amount,notes:(notes?notes+' ':'')+`(${CASH_LABEL[type]} → ${pid2||'—'} / ${target2||'—'})`,linkId});
+    cashmoves.unshift({uid:uid(),ts:Date.now(),date,pid:pid2,kind:destKind,target:target2,type:'deposito',amount,notes:(notes?notes+' ':'')+`(${CASH_LABEL[type]} ← ${pid1||'—'} / ${target1||'—'})`,linkId});
     save();renderCash();renderCashSummary();$('modal-cash').classList.add('hidden');
   });
+  $('open-cash-reset').addEventListener('click',()=>{$('open-cash-modal').click();$('c-type').value='reset';updateCashFormKinds();});
   $('open-cash-list').addEventListener('click',()=>{renderCash();$('modal-cash-list').classList.remove('hidden');});
   function daysAgoText(iso){
     if(!iso)return 'mai';
@@ -2811,43 +2869,71 @@
   function renderCashSummary(){
     const from=val('cb-from'),to=val('cb-to');
     const keys=new Set();
-    Object.keys(cashActual).forEach(k=>keys.add(k));
+    Object.keys(cashManual).forEach(k=>keys.add(k));
     cashmoves.forEach(m=>keys.add(cashKey(m.pid,cashKindOf(m),cashTarget(m))));
-    ids.forEach(x=>{(x.books||[]).forEach(b=>{if(b.book)keys.add(cashKey(x.label,'book',b.book));});});
+    ids.forEach(x=>{
+      (x.books||[]).forEach(b=>{if(b.book)keys.add(cashKey(x.label,'book',b.book));});
+      (x.contos||[]).forEach(c=>{if(c.name)keys.add(cashKey(x.label,'conto',c.name));});
+    });
     const rows=[...keys].map(k=>{
       const [pid,kind,target]=k.split('|');
+      if(kind==='conto'){
+        const cb=contoBalance(k);
+        return {k,pid:pid||'—',kind,target,saldo:cb.bal,info:cb.r?('reimpostato il '+fmtDateIt(cb.r.date)):'calcolato dai movimenti'};
+      }
+      // book: pos. netta = saldo segnato − depositi + prelievi nel periodo; se c'è un "Reimposta saldo",
+      // riparte da lì (il saldo reimpostato conta come punto di partenza, i movimenti precedenti no)
       const forKey=m=>cashKey(m.pid,cashKindOf(m),cashTarget(m))===k;
+      const r=cashLastReset(k,to||null);
       const inRange=m=>(!from||m.date>=from)&&(!to||m.date<=to);
-      const hasAnyMove=cashmoves.some(forKey);
-      const dep=cashmoves.filter(m=>forKey(m)&&inRange(m)&&m.type==='deposito').reduce((s,m)=>s+(numParse(m.amount)||0),0);
-      const wd=cashmoves.filter(m=>forKey(m)&&inRange(m)&&m.type==='prelievo').reduce((s,m)=>s+(numParse(m.amount)||0),0);
-      const attuale=Object.prototype.hasOwnProperty.call(cashActual,k)?cashActual[k]:0;
-      const netta=hasAnyMove?(attuale-dep+wd):0;
-      return {k,pid:pid||'—',kind,target,attuale,netta,ts:cashActualTs[k]};
-    }).filter(r=>r.kind==='conto'||EXTENSION_BOOKS.has(r.target))
-      .sort((a,b)=>(a.pid+a.target).localeCompare(b.pid+b.target));
+      const rel=m=>m.type!=='reset'&&forKey(m)&&inRange(m)&&cashAfter(m,r);
+      const dep=cashmoves.filter(m=>rel(m)&&m.type==='deposito').reduce((s,m)=>s+(numParse(m.amount)||0),0);
+      const wd=cashmoves.filter(m=>rel(m)&&m.type==='prelievo').reduce((s,m)=>s+(numParse(m.amount)||0),0);
+      const base=(r&&(!from||r.date>=from))?(numParse(r.amount)||0):0;
+      const has=Object.prototype.hasOwnProperty.call(cashManual,k);
+      const saldo=has?(numParse(cashManual[k])||0):0;
+      return {k,pid:pid||'—',kind,target,saldo,has,netta:saldo-base-dep+wd,ts:cashManualTs[k],reset:r};
+    }).filter(r=>r.target&&r.target!=='-')
+      .sort((a,b)=>(a.pid+'|'+a.kind+'|'+a.target).localeCompare(b.pid+'|'+b.kind+'|'+b.target));
 
     const tb=$('cash-summary-rows');tb.innerHTML='';
     $('cash-summary-empty').classList.toggle('hidden',rows.length>0);
     const byPid={};rows.forEach(r=>{(byPid[r.pid]=byPid[r.pid]||[]).push(r);});
+    const idTotalsHtml=[];
     Object.keys(byPid).sort().forEach(pid=>{
       const group=byPid[pid];
-      const subtotal=group.reduce((s,r)=>s+r.attuale,0);
+      const subtotal=group.reduce((s,r)=>s+r.saldo,0);
+      idTotalsHtml.push(`<div><span style="color:var(--dim);font-size:12px">${esc(pid)}</span><br><span class="num" style="font-size:16px;font-weight:700">${fmt(subtotal)}</span></div>`);
       const trHead=document.createElement('tr');
       trHead.innerHTML=`<td colspan="3" style="font-weight:700;padding-top:16px;border-bottom:1px solid var(--line2)">${esc(pid)}</td><td style="font-weight:700;padding-top:16px;border-bottom:1px solid var(--line2);text-align:right" class="num">${fmt(subtotal)}</td>`;
       tb.appendChild(trHead);
       group.forEach(r=>{
         const tr=document.createElement('tr');
-        const kindTag=r.kind==='conto'?'<span class="note" style="margin:0">conto</span> ':'';
-        tr.innerHTML=`<td>${kindTag}${esc(r.target||'—')}</td>`+
-          `<td class="num">${fmt(r.attuale)}</td>`+
-          `<td class="num ${r.netta>=0?'neg':'pos'}">${fmt(r.netta)}</td>`+
-          `<td class="note" style="margin:0${isRecentUpdate(r.ts)?';color:var(--green);font-weight:700':''}">${daysAgoText(r.ts)}</td>`;
+        if(r.kind==='conto'){
+          tr.innerHTML=`<td><span class="note" style="margin:0">conto</span> ${esc(r.target)}</td>`+
+            `<td class="num">${fmt(r.saldo)}</td>`+
+            `<td class="num" style="color:var(--dim)">—</td>`+
+            `<td class="note" style="margin:0">${esc(r.info)}</td>`;
+        } else {
+          tr.innerHTML=`<td>${esc(r.target)}</td>`+
+            `<td class="num"><input class="num cash-bal" data-k="${esc(r.k)}" data-testid="cash-bal" value="${r.has?String(Math.round(r.saldo*100)/100).replace('.',','):''}" placeholder="—" style="max-width:130px;padding:6px 10px;text-align:right"></td>`+
+            `<td class="num" style="color:var(${r.netta>=0?'--red':'--green'})">${fmt(r.netta)}</td>`+
+            `<td class="note" style="margin:0${isRecentUpdate(r.ts)?';color:var(--green);font-weight:700':''}">${daysAgoText(r.ts)}${r.reset?`<br><span style="color:var(--dim);font-weight:400">pos. netta dal ${fmtDateIt(r.reset.date)}</span>`:''}</td>`;
+        }
         tb.appendChild(tr);
       });
     });
-    const grandTotal=rows.reduce((s,r)=>s+r.attuale,0);
-    $('cash-grand-total').textContent=fmt(grandTotal);
+    // saldo del book segnato a mano: si scrive nella casella e si conferma con Invio (o uscendo dalla casella)
+    tb.querySelectorAll('.cash-bal').forEach(inp=>inp.addEventListener('change',()=>{
+      const k=inp.dataset.k,raw=inp.value.trim();
+      if(raw===''){delete cashManual[k];delete cashManualTs[k];}
+      else{const v=numParse(raw);if(isNaN(v)){alert('Importo non valido.');renderCashSummary();return;}cashManual[k]=v;cashManualTs[k]=new Date().toISOString();}
+      save();renderCashSummary();
+    }));
+    const grandTotal=rows.reduce((s,r)=>s+r.saldo,0);
+    // la versione mobile non ha tutti i riquadri del riepilogo: aggiorno solo quelli presenti
+    if($('cash-grand-total'))$('cash-grand-total').textContent=fmt(grandTotal);
+    if($('cash-id-totals'))$('cash-id-totals').innerHTML=idTotalsHtml.join('')||'<span class="note" style="margin:0">Nessuna ID ancora tracciata.</span>';
   }
   $('cb-from').addEventListener('change',renderCashSummary);
   $('cb-to').addEventListener('change',renderCashSummary);
@@ -2862,16 +2948,16 @@
   $('sort-tipos').addEventListener('click',()=>{tipos.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('sort-games').addEventListener('click',()=>{games.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('new-id').addEventListener('keydown',e=>{if(e.key==='Enter')$('add-id').click();});
-  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,rsStake:rsStakeGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
+  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,cashManual:{v:cashManual,ts:cashManualTs},rsStake:rsStakeGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
   $('imp-json').addEventListener('click',()=>$('imp-file').click());
-  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}rsFreezeEV();save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
+  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(d.cashManual&&typeof d.cashManual==='object'){cashManual=d.cashManual.v||{};cashManualTs=d.cashManual.ts||{};}if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}rsFreezeEV();save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
   $('wipe').addEventListener('click',()=>{if(confirm('Cancellare TUTTI i movimenti? (book e ID restano)')){moves=[];save();renderMoves();}});
   $('fix-orphan-pids').addEventListener('click',()=>{
     const validLabels=new Set(ids.map(x=>x.label));
     const usedPids=new Set();
     moves.forEach(m=>{if(m.pid)usedPids.add(m.pid);});
     cashmoves.forEach(m=>{if(m.pid)usedPids.add(m.pid);});
-    [cashActual,cashActualTs,cashStart].forEach(store=>{
+    [cashActual,cashActualTs,cashStart,cashManual,cashManualTs].forEach(store=>{
       Object.keys(store).forEach(k=>{const p=k.split('|')[0];if(p)usedPids.add(p);});
     });
     let fixed=0;const fixedNames=[];
@@ -2894,7 +2980,7 @@
     moves.forEach(m=>{if(m.book)usedBooks.add(m.book);});
     cashmoves.forEach(m=>{if(cashKindOf(m)==='book'){const t=cashTarget(m);if(t)usedBooks.add(t);}});
     ids.forEach(x=>{(x.books||[]).forEach(b=>{if(b.book)usedBooks.add(b.book);});});
-    [cashActual,cashActualTs].forEach(store=>{
+    [cashActual,cashActualTs,cashManual].forEach(store=>{
       Object.keys(store).forEach(k=>{const parts=k.split('|');if(parts[1]==='book'&&parts[2])usedBooks.add(parts[2]);});
     });
     let fixed=0;const fixedNames=[];
@@ -2982,6 +3068,7 @@
   // l'estensione scrive un piccolo file nella stessa cartella scelta per il backup, e qui lo leggiamo e lo svuotiamo.
   let pendingSaldiTimer=null;
   async function checkPendingSaldi(){
+    return; // i saldi dei book ora si segnano solo a mano: quelli inviati dall'estensione non vengono più applicati
     if(!FS_SUPPORTED||!backupDir)return;
     try{
       let perm=await backupDir.queryPermission({mode:'readwrite'});
@@ -3141,7 +3228,7 @@
         {range:GS_TABS.cashmoves.name+'!A1:A'+GS_TABS.cashmoves.maxRows,values:gsPad(cashmoves.map(b=>JSON.stringify(b)),GS_TABS.cashmoves.maxRows)},
         {range:GS_TABS.promos.name+'!A1:A'+GS_TABS.promos.maxRows,values:gsPad(promos.map(b=>JSON.stringify(b)),GS_TABS.promos.maxRows)},
         {range:GS_TABS.savedMultiples.name+'!A1:A'+GS_TABS.savedMultiples.maxRows,values:gsPad(savedMultiplesRaw.map(b=>JSON.stringify(b)),GS_TABS.savedMultiples.maxRows)},
-        {range:'Meta!A1:A7',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)],[JSON.stringify(rsFunRules)]]}
+        {range:'Meta!A1:A8',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)],[JSON.stringify(rsFunRules)],[JSON.stringify({v:cashManual,ts:cashManualTs})]]}
       ];
       await gsApi('/values:batchUpdate',{method:'POST',body:JSON.stringify({valueInputOption:'RAW',data})});
       localStorage.setItem('tk_gs_last_sync',new Date().toISOString());
@@ -3155,7 +3242,7 @@
   async function loadFromSheets(){
     if(!gsCfg||!gsCfg.enabled)return null;
     await gsEnsureTabs();
-    const ranges=[...Object.values(GS_TABS).map(t=>t.name+'!A:A'),'Meta!A1:A7'];
+    const ranges=[...Object.values(GS_TABS).map(t=>t.name+'!A:A'),'Meta!A1:A8'];
     const qs=ranges.map(r=>'ranges='+encodeURIComponent(r)).join('&');
     const res=await gsApi('/values:batchGet?'+qs,{method:'GET'});
     const vrs=res.valueRanges||[];
@@ -3169,7 +3256,8 @@
     try{cats=metaRows[4]?JSON.parse(metaRows[4][0]):{};}catch(e){cats={};}
     const rsStake=metaRows[5]?numParse(metaRows[5][0]):null;
     let rsFunRulesIn=null;try{rsFunRulesIn=metaRows[6]?JSON.parse(metaRows[6][0]):null;}catch(e){rsFunRulesIn=null;}
-    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake,rsFunRules:rsFunRulesIn};
+    let cmIn=null;try{cmIn=metaRows[7]?JSON.parse(metaRows[7][0]):null;}catch(e){cmIn=null;}
+    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake,rsFunRules:rsFunRulesIn,cashManual:cmIn};
   }
   function gsScheduleSync(){
     if(!gsCfg||!gsCfg.enabled)return;
@@ -4746,16 +4834,7 @@
     const qs=new URLSearchParams(location.search);
     if(!qs.has('saldo_pid')||!qs.has('saldo_book')||!qs.has('saldo_val'))return;
     const pid=qs.get('saldo_pid'),book=qs.get('saldo_book'),v=numParse(qs.get('saldo_val'));
-    if(pid&&book&&!isNaN(v)){
-      const key=cashKey(pid,'book',book);
-      cashActual[key]=v;
-      cashActualTs[key]=new Date().toISOString();
-      save();
-      const cashTabBtn=document.querySelector('[data-tab="cash"]');
-      if(cashTabBtn)cashTabBtn.click();
-      renderCashSummary();
-      alert(`Saldo aggiornato dall'estensione: ${pid} · ${book} → ${fmt(v)}`);
-    }
+    if(pid&&book&&!isNaN(v))showToast('Saldo dall\'estensione ignorato: i saldi dei book ora si segnano a mano');
     qs.delete('saldo_pid');qs.delete('saldo_book');qs.delete('saldo_val');
     const rest=qs.toString();
     history.replaceState(null,'',location.pathname+(rest?'?'+rest:'')+location.hash);

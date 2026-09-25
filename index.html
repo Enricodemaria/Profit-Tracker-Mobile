@@ -3770,7 +3770,7 @@
   const num = (id)=>{const v=($(id)?.value||'').toString().replace(',','.');const n=numParse(v);return isNaN(n)?0:n;};
   const fmtQ = (x)=>{if(!isFinite(x))x=0;return x.toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});};
   function setSign(el,x){el.classList.remove('green','red');el.classList.add(x>=0?'green':'red');}
-  let currentPBProfit=0, currentDutchProfit=0;
+  let currentPBProfit=0, currentDutchProfit=0, currentPBProfitNoRef=0, currentDutchProfitNoRef=0;
 
   // ---------- tabs ----------
   // chips (quick set)
@@ -3847,6 +3847,8 @@
 
     const guaranteed=Math.min(pWinAdj,pLoseAdj);
     currentPBProfit=guaranteed;
+    // nei movimenti il rimborso non si conta mai (arriva dopo e lo inserisci con un movimento a parte)
+    currentPBProfitNoRef=mode==='refund'?Math.min(pWinAdj,pLoseAdj-V):guaranteed;
     const hero=$('pb-hero'),prof=$('pb-profit');
     prof.textContent=fmt(guaranteed);
     hero.classList.toggle('loss',guaranteed<0);
@@ -3937,10 +3939,10 @@
     let M=Cf;for(let i=0;i<nOut;i++)if(i!==fix)M+=stakes[i];
 
     const tbody=$('d-out-table');tbody.innerHTML='';
-    let minP=Infinity;
+    let minP=Infinity,minNR=Infinity;
     for(let k=0;k<nOut;k++){
       const p=(k===fix?Wf+boost:stakes[k]*Oeff[k]+V)-M+bonus;
-      minP=Math.min(minP,p);
+      minP=Math.min(minP,p);minNR=Math.min(minNR,k===fix?p:p-V);
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>Esito ${k+1}${k===fix?' <span style="color:var(--green);font-size:11px;font-weight:700">PROMO</span>':''} <span style="color:var(--dim)">@ ${fmtQ(odds[k])}</span></td>
         <td class="num" data-testid="d-outprofit-${k}" style="color:${p>=0?'var(--green)':'var(--red)'}">${fmt(p)}</td>`;
@@ -3948,6 +3950,7 @@
     }
     $('d-total').textContent=fmt(M);
     currentDutchProfit=minP;
+    currentDutchProfitNoRef=minNR;
     const hero=$('d-hero');
     $('d-profit').textContent=fmt(minP);
     hero.classList.toggle('loss',minP<0);
@@ -4237,9 +4240,9 @@
     return {legsCount:mLegCount,stake:val('m-stake'),bonus:val('m-bonus'),book:val('m-book'),mode:val('m-mode'),refundamt:val('m-refundamt'),reftype:val('m-reftype'),ret:val('m-ret'),comm2:val('m-comm2'),boostOn:$('m-boost-on').checked,boostType:val('m-boost-type'),boostValue:val('m-boost-value'),legs};}
   const legLabel=l=>l.esito?`${l.event} (${l.esito})`:l.event;
   const multStatus=d=>d.legs.some(l=>l.result==='banca')||d.legs.every(l=>l.result==='book')?'chiusa':'in corso';
-  // multipla con rimborso chiusa in banca (persa al book): il profitto calcolato comprende già il rimborso,
-  // che però arriva dopo. Questo è l'importo da togliere quando la si salva nei movimenti.
-  const multRefundPending=d=>(d&&d.mode==='refund'&&Array.isArray(d.legs)&&d.legs.some(l=>l.result==='banca'))?(accaInputsFromData(d).V||0):0;
+  // multipla con rimborso: nei movimenti il rimborso non si conta mai (arriva dopo e lo inserisci con un
+  // movimento a parte). Si toglie sempre, tranne quando la multipla è già vinta al book (lì il rimborso non c'è).
+  const multRefundPending=d=>(d&&d.mode==='refund'&&Array.isArray(d.legs)&&!d.legs.every(l=>l.result==='book'))?(accaInputsFromData(d).V||0):0;
   const multRefundNote=d=>`rimborso da ricevere: € ${String(d.refundamt||d.refpct||'').replace('.',',')} (${d.reftype==='freebet'?'free bet':'contanti'})`;
   function renderSaved(){
     const c=$('m-saved-list');
@@ -4302,7 +4305,7 @@
     const status=multStatus(m.data);
     const evList=m.data.legs.map(legLabel).filter(Boolean).join(' · ');
     const rp=multRefundPending(m.data);
-    $('tk-modal-profit').textContent=`${esch(m.name)}${evList?' — '+esch(evList):''} · ${m.data.legsCount} gare · ${status} · profitto ${fmt(m.profit||0)}`+(rp?` · il rimborso (${fmt(rp)}) non è ancora arrivato: salvo ${fmt((m.profit||0)-rp)}`:'');
+    $('tk-modal-profit').textContent=`${esch(m.name)}${evList?' — '+esch(evList):''} · ${m.data.legsCount} gare · ${status} · profitto ${fmt(m.profit||0)}`+(rp?` · rimborso escluso, da inserire con un nuovo movimento: salvo ${fmt((m.profit||0)-rp)}`:'');
     openTrackModal(m.data.book);
   }
   function addSimpleToTracker(name,profit,event,bonus,extraNote,preferredBook){
@@ -4313,13 +4316,17 @@
   }
   $('pb-track').addEventListener('click',()=>{
     const bonus=val('pb-bonus');
-    const note=val('pb-mode')==='refund'?('Rimborso: € '+val('pb-refundamt')+' ('+($('pb-reftype').value==='freebet'?'free bet':'contanti')+')'):'';
-    addSimpleToTracker('Punta/Banca',currentPBProfit,val('pb-event'),bonus,note,val('pb-book'));
+    const refund=val('pb-mode')==='refund';
+    const note=refund?('rimborso da ricevere: € '+val('pb-refundamt')+' ('+($('pb-reftype').value==='freebet'?'free bet':'contanti')+')'):'';
+    addSimpleToTracker('Punta/Banca',currentPBProfitNoRef,val('pb-event'),bonus,note,val('pb-book'));
+    if(refund)$('tk-modal-profit').textContent+=' · rimborso escluso, da inserire con un nuovo movimento';
   });
   $('d-track').addEventListener('click',()=>{
     const bonus=val('d-bonus');
-    const note=val('d-bettype')==='refund'?('Rimborso: € '+val('d-refundamt')+' ('+($('d-reftype').value==='freebet'?'free bet':'contanti')+')'):'';
-    addSimpleToTracker('Punta/Punta (Dutching)',currentDutchProfit,val('d-event'),bonus,note,val('d-book'));
+    const refund=val('d-bettype')==='refund';
+    const note=refund?('rimborso da ricevere: € '+val('d-refundamt')+' ('+($('d-reftype').value==='freebet'?'free bet':'contanti')+')'):'';
+    addSimpleToTracker('Punta/Punta (Dutching)',currentDutchProfitNoRef,val('d-event'),bonus,note,val('d-book'));
+    if(refund)$('tk-modal-profit').textContent+=' · rimborso escluso, da inserire con un nuovo movimento';
   });
   $('tkm-cancel').addEventListener('click',()=>$('tk-modal').classList.add('hidden'));
   $('tkm-confirm').addEventListener('click',()=>{
@@ -4347,7 +4354,7 @@
     pendingTrack={name:trackName,profit:currentMultProfit,data:d};
     pendingCalcMeta={bonus:val('m-bonus')||'',note:''};
     const rp=multRefundPending(d);
-    $('tk-modal-profit').textContent=`${esch(trackName)}${evList?' — '+esch(evList):''} · ${d.legsCount} gare · profitto ${fmt(currentMultProfit)}`+(rp?` · il rimborso (${fmt(rp)}) non è ancora arrivato: salvo ${fmt(currentMultProfit-rp)}`:'');
+    $('tk-modal-profit').textContent=`${esch(trackName)}${evList?' — '+esch(evList):''} · ${d.legsCount} gare · profitto ${fmt(currentMultProfit)}`+(rp?` · rimborso escluso, da inserire con un nuovo movimento: salvo ${fmt(currentMultProfit-rp)}`:'');
     openTrackModal(val('m-book'));
   });
   $('m-save').addEventListener('click',()=>{

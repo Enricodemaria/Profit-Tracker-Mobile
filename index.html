@@ -4237,6 +4237,10 @@
     return {legsCount:mLegCount,stake:val('m-stake'),bonus:val('m-bonus'),book:val('m-book'),mode:val('m-mode'),refundamt:val('m-refundamt'),reftype:val('m-reftype'),ret:val('m-ret'),comm2:val('m-comm2'),boostOn:$('m-boost-on').checked,boostType:val('m-boost-type'),boostValue:val('m-boost-value'),legs};}
   const legLabel=l=>l.esito?`${l.event} (${l.esito})`:l.event;
   const multStatus=d=>d.legs.some(l=>l.result==='banca')||d.legs.every(l=>l.result==='book')?'chiusa':'in corso';
+  // multipla con rimborso chiusa in banca (persa al book): il profitto calcolato comprende già il rimborso,
+  // che però arriva dopo. Questo è l'importo da togliere quando la si salva nei movimenti.
+  const multRefundPending=d=>(d&&d.mode==='refund'&&Array.isArray(d.legs)&&d.legs.some(l=>l.result==='banca'))?(accaInputsFromData(d).V||0):0;
+  const multRefundNote=d=>`rimborso da ricevere: € ${String(d.refundamt||d.refpct||'').replace('.',',')} (${d.reftype==='freebet'?'free bet':'contanti'})`;
   function renderSaved(){
     const c=$('m-saved-list');
     if(!savedMultiples.length){c.innerHTML='<p class="note">Nessuna multipla salvata.</p>';return;}
@@ -4297,7 +4301,8 @@
     pendingCalcMeta={bonus:m.data.bonus||'',note:''};
     const status=multStatus(m.data);
     const evList=m.data.legs.map(legLabel).filter(Boolean).join(' · ');
-    $('tk-modal-profit').textContent=`${esch(m.name)}${evList?' — '+esch(evList):''} · ${m.data.legsCount} gare · ${status} · profitto ${fmt(m.profit||0)}`;
+    const rp=multRefundPending(m.data);
+    $('tk-modal-profit').textContent=`${esch(m.name)}${evList?' — '+esch(evList):''} · ${m.data.legsCount} gare · ${status} · profitto ${fmt(m.profit||0)}`+(rp?` · il rimborso (${fmt(rp)}) non è ancora arrivato: salvo ${fmt((m.profit||0)-rp)}`:'');
     openTrackModal(m.data.book);
   }
   function addSimpleToTracker(name,profit,event,bonus,extraNote,preferredBook){
@@ -4325,9 +4330,11 @@
     const idsToUse=checked.length?checked:[''];
     let notes=m.name;
     if(pendingCalcMeta.note)notes+=' — '+pendingCalcMeta.note;
+    const refPend=multRefundPending(m.data);
+    if(refPend)notes+=' — '+multRefundNote(m.data);
     const bonusVal=num('tkm-bonus');
     idsToUse.forEach(pid=>{
-      moves.unshift({uid:uid(),date:val('tkm-date'),book:val('tkm-book'),pid,type:val('tkm-type'),game:val('tkm-game'),info:val('tkm-info'),notes:notes,start:'0',reload:'',end:((m.profit||0)-bonusVal).toFixed(2),bonus:val('tkm-bonus')});
+      moves.unshift({uid:uid(),date:val('tkm-date'),book:val('tkm-book'),pid,type:val('tkm-type'),game:val('tkm-game'),info:val('tkm-info'),notes:notes,start:'0',reload:'',end:((m.profit||0)-bonusVal-refPend).toFixed(2),bonus:val('tkm-bonus')});
     });
     save();renderMoves();
     $('tk-modal').classList.add('hidden');pendingTrack=null;pendingCalcMeta={};
@@ -4339,7 +4346,8 @@
     const trackName=loaded?loaded.name:'Multipla';
     pendingTrack={name:trackName,profit:currentMultProfit,data:d};
     pendingCalcMeta={bonus:val('m-bonus')||'',note:''};
-    $('tk-modal-profit').textContent=`${esch(trackName)}${evList?' — '+esch(evList):''} · ${d.legsCount} gare · profitto ${fmt(currentMultProfit)}`;
+    const rp=multRefundPending(d);
+    $('tk-modal-profit').textContent=`${esch(trackName)}${evList?' — '+esch(evList):''} · ${d.legsCount} gare · profitto ${fmt(currentMultProfit)}`+(rp?` · il rimborso (${fmt(rp)}) non è ancora arrivato: salvo ${fmt(currentMultProfit-rp)}`:'');
     openTrackModal(val('m-book'));
   });
   $('m-save').addEventListener('click',()=>{

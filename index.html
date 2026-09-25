@@ -2165,8 +2165,9 @@
       if(child)tr.classList.add('rs-child');
       return tr;
   }
-  // movimenti salvati insieme dall'"Inserimento multiplo" (batchGroup). Per quelli vecchi: stessa data, book,
-  // tipologia, gioco, info e note, ma solo se coinvolgono almeno due ID diverse (due giocate della stessa ID restano separate)
+  // un gruppo = una promozione, una riga per ID. Nuovi: salvati insieme dall'"Inserimento multiplo" (batchGroup).
+  // Vecchi: stessa data, book, tipologia, gioco, info e nome della promo nelle note, e ogni ID una volta sola;
+  // altrimenti (note vuote o stessa ID ripetuta) le righe restano separate
   const mbExpanded=new Set();
   const mbGroupKey=m=>m.batchGroup?('g:'+m.batchGroup):('h:'+[m.date,m.book,m.type,m.game,m.info||'',(m.notes||'').trim().toLowerCase()].join('|'));
   function mbGroupRow(k,g){
@@ -2174,7 +2175,7 @@
     const p=sum(profitOf),rel=sum(m=>n(m.reload));
     const open=mbExpanded.has(k),f=g[0];
     const pids=[...new Set(g.map(m=>m.pid))];
-    const lbl=pids.length===g.length?`${g.length} ID`:`${g.length} righe`;
+    const lbl=`${g.length} ID`;
     const tr=document.createElement('tr');tr.className='clickable rs-group'+(open?' rs-open':'');
     tr.innerHTML=`<td data-label="Data">${esc(f.date)}</td><td data-label="ID"><b>${lbl}</b> <span class="note" style="margin:0">${esc(pids.join(', '))}</span></td><td data-label="Book">${esc(f.book)}</td><td data-label="Tipologia">${esc(f.type)}</td><td data-label="Gioco">${esc(f.game)}</td><td data-label="Info">${esc(f.info)}</td>`+
       `<td class="num" data-label="Iniziale">${fmt(sum(m=>n(m.start)))}</td>`+
@@ -2193,7 +2194,8 @@
     displayed.forEach(m=>{const k=mbGroupKey(m);if(!map.has(k))map.set(k,[]);map.get(k).push(m);});
     let units=[];
     map.forEach((g,k)=>{
-      const real=g.length>1&&(k.startsWith('g:')||new Set(g.map(m=>m.pid)).size>1);
+      const oneEach=new Set(g.map(m=>m.pid)).size===g.length;
+      const real=g.length>1&&(k.startsWith('g:')||(oneEach&&(g[0].notes||'').trim()!==''));
       if(real)units.push({k,g});else g.forEach(m=>units.push({k:null,g:[m]}));
     });
     const NUM=new Set(['profit','start','end','bonus','reload']);
@@ -2305,7 +2307,9 @@
       return g.reduce((s,m)=>s+mvSortValue(m,col),0);
     };
     const attn=needsAttn||(()=>false);
-    const groups=[...map.entries()].map(([k,g])=>({k,g,a:g.some(attn),v:gval(g)}));
+    const units=[];
+    map.forEach((g,k)=>{const real=g.length>1&&(g[0].rsGroup||new Set(g.map(m=>m.pid)).size===g.length);if(real)units.push([k,g]);else g.forEach(m=>units.push([k,[m]]));});
+    const groups=units.map(([k,g])=>({k,g,a:g.some(attn),v:gval(g)}));
     groups.sort((x,y)=>{if(x.a!==y.a)return x.a?-1:1;return x.v<y.v?-dir:x.v>y.v?dir:0;});
     groups.forEach(({k,g,a})=>{
       if(g.length===1){tb.appendChild(rsRow(g[0]));return;}

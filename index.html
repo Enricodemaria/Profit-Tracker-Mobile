@@ -75,6 +75,13 @@
   .rs-overdue-row:hover{background:rgba(240,180,60,.12)}
   #rs-stat-profit,#rs-stat-ev,#rs-stat-diff{white-space:nowrap}
   .fr-table th,.fr-table td{padding-left:4px;padding-right:4px}
+  .rs-group td{font-weight:600}
+  .rs-group.rs-open td{border-bottom-color:transparent}
+  .rs-child td{background:rgba(255,255,255,.02)}
+  .rs-child td:first-child{padding-left:24px}
+  #rs-moves-rows tr.rs-child{margin-left:14px;border-style:dashed;background:rgba(255,255,255,.02)}
+  #rs-moves-rows tr.rs-child td{background:none}
+  #rs-moves-rows tr.rs-child td:first-child{padding-left:0}
   .rs-warn-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--amber);color:#1a1400;border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -2115,7 +2122,7 @@
       const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
       const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
       displayed=[...overdue,...rest];
-      renderRimborsoRows(displayed);
+      renderRimborsoRows(displayed,sortState,needsAttn);
     } else if(mvActiveTab==='maggiorate'){
       displayed=mvApplySort(displayed,sortState.col,sortState.dir);
       renderMaggiorateRows(displayed);
@@ -2187,10 +2194,9 @@
     $('mg-moves-empty').classList.toggle('hidden',displayed.length>0);
   }
 
-  function renderRimborsoRows(displayed){
-    const tb=$('rs-moves-rows');tb.innerHTML='';
+  // una riga per ID (usata da sola, o dentro un gruppo aperto)
+  function rsRow(m,child){
     const today=new Date().toISOString().slice(0,10);
-    displayed.forEach(m=>{
       const p=profitOf(m);
       const att=rimborsoAttesi(m);
       const evS=rsEVStored(m);
@@ -2212,7 +2218,58 @@
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRimborso(m.uid);});
       tr.addEventListener('click',()=>openRimborso(m.uid));
-      tb.appendChild(tr);
+      if(child)tr.classList.add('rs-child');
+      return tr;
+  }
+  // righe della stessa promo: salvate insieme dal modulo (rsGroup), oppure, per quelle vecchie,
+  // stessa data, book, note e parametri della promo
+  const rsExpanded=new Set();
+  const rsGroupKey=m=>m.rsGroup||[m.date,m.book,(m.notes||'').trim().toLowerCase(),m.scadenza||'',m.rsRealPct||'',m.rsRealMax||'',m.rsFunPct||'',m.rsFunMax||''].join('|');
+  function rsGroupRow(k,g,overdue){
+    const sum=fn=>g.reduce((s,m)=>s+fn(m),0);
+    const att=g.map(rimborsoAttesi);
+    const netto=att.reduce((s,a)=>s+a.netto,0),real=att.reduce((s,a)=>s+a.realAtteso,0),fun=att.reduce((s,a)=>s+a.funAtteso,0);
+    const p=sum(profitOf);
+    const evs=g.map(rsEVStored).filter(v=>v!==null),ev=evs.length?evs.reduce((a,c)=>a+c,0):null;
+    const missing=g.filter(m=>(m.rsBonusMon===undefined||m.rsBonusMon==='')&&rimborsoAttesi(m).netto<0).length;
+    const bm=sum(m=>numParse(m.rsBonusMon)||0);
+    const open=rsExpanded.has(k),f=g[0];
+    const pids=[...new Set(g.map(m=>m.pid))].join(', ');
+    const tr=document.createElement('tr');tr.className='clickable rs-group'+(overdue?' rs-overdue-row':'')+(open?' rs-open':'');
+    tr.innerHTML=`<td data-label="Data">${esc(f.date)}</td><td data-label="ID"><b>${g.length} ID</b> <span class="note" style="margin:0">${esc(pids)}</span></td><td data-label="Book">${esc(f.book)}</td>`+
+      `<td data-label="Scadenza">${f.scadenza?esc(f.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Almeno una ID ha la scadenza passata senza Bonus Monetizzato">Da controllare</span>':''}</td>`+
+      `<td class="num" data-label="Saldo iniziale">${fmt(sum(m=>numParse(m.start)||0))}</td>`+
+      `<td class="num" data-label="Saldo finale">${fmt(sum(m=>numParse(m.end)||0))}</td>`+
+      `<td class="num ${netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(netto)}</td>`+
+      `<td class="num" data-label="Real atteso" style="color:var(--amber)">${real?fmt(real):'–'}</td>`+
+      `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${fun?fmt(fun):'–'}</td>`+
+      `<td class="num" data-label="Bonus Monetizzato">${missing?`<span class="note" style="margin:0">da inserire (${missing})</span>`:fmt(bm)}</td>`+
+      `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
+      `<td class="num" data-label="EV" style="color:var(${ev===null?'--dim':ev>=0?'--green':'--red'})">${ev===null?'–':fmtSigned(ev)}</td>`+
+      `<td data-label="Note" style="white-space:nowrap">${esc(f.notes)}</td>`+
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
+    tr.addEventListener('click',()=>{open?rsExpanded.delete(k):rsExpanded.add(k);renderMoves();});
+    return tr;
+  }
+  function renderRimborsoRows(displayed,sortState,needsAttn){
+    const tb=$('rs-moves-rows');tb.innerHTML='';
+    const map=new Map();
+    displayed.forEach(m=>{const k=rsGroupKey(m);if(!map.has(k))map.set(k,[]);map.get(k).push(m);});
+    // ordinamento sul gruppo: colonne numeriche sul totale, le altre sulla prima riga; i gruppi da controllare prima
+    const NUM=new Set(['profit','start','end','netto','realatteso','funatteso','bonusmon','ev']);
+    const col=sortState?sortState.col:'date',dir=sortState?sortState.dir:-1;
+    const gval=g=>{
+      if(!NUM.has(col))return mvSortValue(g[0],col);
+      if(col==='ev'){const v=g.map(rsEVStored).filter(x=>x!==null);return v.length?v.reduce((a,c)=>a+c,0):-1e9;}
+      return g.reduce((s,m)=>s+mvSortValue(m,col),0);
+    };
+    const attn=needsAttn||(()=>false);
+    const groups=[...map.entries()].map(([k,g])=>({k,g,a:g.some(attn),v:gval(g)}));
+    groups.sort((x,y)=>{if(x.a!==y.a)return x.a?-1:1;return x.v<y.v?-dir:x.v>y.v?dir:0;});
+    groups.forEach(({k,g,a})=>{
+      if(g.length===1){tb.appendChild(rsRow(g[0]));return;}
+      tb.appendChild(rsGroupRow(k,g,a));
+      if(rsExpanded.has(k))[...g].sort((x,y)=>(x.pid||'').localeCompare(y.pid||'')).forEach(m=>tb.appendChild(rsRow(m,true)));
     });
     $('rs-moves-empty').classList.toggle('hidden',displayed.length>0);
   }
@@ -2413,7 +2470,7 @@
   });
   $('rs-back').addEventListener('click',()=>{$('modal-rs2').classList.add('hidden');$('modal-rs1').classList.remove('hidden');});
   $('rs-save').addEventListener('click',()=>{
-    const common={date:val('rs-date'),type:'Rimborso Slot',game:'Slot',scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),rsEV:val('rs-ev'),notes:val('rs-notes')};
+    const common={rsGroup:uid(),date:val('rs-date'),type:'Rimborso Slot',game:'Slot',scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),rsEV:val('rs-ev'),notes:val('rs-notes')};
     let added=0;
     [...$('rs-rows').querySelectorAll('tr')].forEach(tr=>{
       const k=tr.dataset.k;

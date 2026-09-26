@@ -948,6 +948,20 @@
 
   <!-- ===== RIEPILOGO ===== -->
   <section id="summary" class="pane">
+    <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:12px">
+      <div class="field" style="max-width:220px;margin-bottom:0"><label>Periodo</label>
+        <select id="r-preset" data-testid="r-preset">
+          <option value="">Sempre</option>
+          <option value="today">Oggi</option>
+          <option value="yesterday">Ieri</option>
+          <option value="week">Ultima settimana</option>
+          <option value="month">Ultimo mese</option>
+          <option value="year">Ultimo anno</option>
+          <option value="ytd">Da inizio anno (YTD)</option>
+        </select>
+      </div>
+      <span class="note" id="r-period-note" data-testid="r-period-note" style="margin:0 0 10px"></span>
+    </div>
     <div class="grid4" id="summary-stats-row" style="margin-bottom:20px">
       <div class="card stat"><div class="lbl">Totale</div><div class="big" id="r-total" data-testid="r-total">€ 0,00</div></div>
       <div class="card stat"><div class="lbl">Matched Betting</div><div class="big" id="r-mb" data-testid="r-mb">€ 0,00</div></div>
@@ -3545,7 +3559,28 @@
   function sumBy(keyFn){const m={};moves.forEach(x=>{const k=keyFn(x)||'—';m[k]=(m[k]||0)+profitOf(x);});return m;}
   function countBy(keyFn){const m={};moves.forEach(x=>{const k=keyFn(x)||'—';m[k]=(m[k]||0)+1;});return m;}
 
+  // periodo rapido → {from,to} (null = sempre); stessa logica del filtro dei Movimenti
+  function presetRange(p){
+    const now=new Date(),today=isoDate(now);
+    if(p==='today')return{from:today,to:today};
+    if(p==='yesterday'){const d=new Date(now);d.setDate(d.getDate()-1);return{from:isoDate(d),to:isoDate(d)};}
+    if(p==='week'){const d=new Date(now);d.setDate(d.getDate()-6);return{from:isoDate(d),to:today};}
+    if(p==='month'){const d=new Date(now);d.setMonth(d.getMonth()-1);return{from:isoDate(d),to:today};}
+    if(p==='year'){const d=new Date(now);d.setFullYear(d.getFullYear()-1);return{from:isoDate(d),to:today};}
+    if(p==='ytd')return{from:`${now.getFullYear()}-01-01`,to:today};
+    return null;
+  }
+  $('r-preset').addEventListener('change',()=>{localStorage.setItem('tk_sum_period',val('r-preset'));renderSummary();});
   function renderSummary(){
+    // le 4 card in alto seguono il periodo scelto (salvato); tabelle e grafici sotto restano su tutto
+    const rPer=localStorage.getItem('tk_sum_period')||'';if($('r-preset').value!==rPer)$('r-preset').value=rPer;
+    const rRange=presetRange(rPer),inPer=m=>!rRange||((m.date||'')>=rRange.from&&(m.date||'')<=rRange.to);
+    const pm=moves.filter(inPer);
+    const cTot=pm.reduce((s,m)=>s+profitOf(m),0);
+    const cMB=pm.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
+    const cMagg=pm.filter(m=>m.type==='Maggiorate').reduce((s,m)=>s+profitOf(m),0);
+    const cRS=pm.filter(m=>m.type==='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
+    $('r-period-note').textContent=rRange?(rRange.from===rRange.to?fmtDateIt(rRange.from):`dal ${fmtDateIt(rRange.from)} al ${fmtDateIt(rRange.to)}`)+` · ${pm.length} movimenti`:'';
     const tot=moves.reduce((s,m)=>s+profitOf(m),0);
     const now=new Date();
     const curYear=String(now.getFullYear());
@@ -3553,10 +3588,10 @@
     const totMB=moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
     const totMagg=moves.filter(m=>m.type==='Maggiorate').reduce((s,m)=>s+profitOf(m),0);
     const totRS=moves.filter(m=>m.type==='Rimborso Slot').reduce((s,m)=>s+profitOf(m),0);
-    const rt=$('r-total');rt.textContent=fmtInt(tot);rt.className='big '+(tot>=0?'pos':'neg');autoFitBig(rt);
-    const rmb=$('r-mb');rmb.textContent=fmtInt(totMB);rmb.className='big '+(totMB>=0?'pos':'neg');autoFitBig(rmb);
-    const rmg=$('r-magg');rmg.textContent=fmtInt(totMagg);rmg.className='big '+(totMagg>=0?'pos':'neg');autoFitBig(rmg);
-    const rrs=$('r-rs');rrs.textContent=fmtInt(totRS);rrs.className='big '+(totRS>=0?'pos':'neg');autoFitBig(rrs);
+    const rt=$('r-total');rt.textContent=fmtInt(cTot);rt.className='big '+(cTot>=0?'pos':'neg');autoFitBig(rt);
+    const rmb=$('r-mb');rmb.textContent=fmtInt(cMB);rmb.className='big '+(cMB>=0?'pos':'neg');autoFitBig(rmb);
+    const rmg=$('r-magg');rmg.textContent=fmtInt(cMagg);rmg.className='big '+(cMagg>=0?'pos':'neg');autoFitBig(rmg);
+    const rrs=$('r-rs');rrs.textContent=fmtInt(cRS);rrs.className='big '+(cRS>=0?'pos':'neg');autoFitBig(rrs);
 
     // tabella mensile principale: Totale / Matched Betting / Maggiorate / Rimborso Slot
     const monthsSet=[...new Set(moves.map(m=>(m.date||'').slice(0,7)).filter(Boolean))].sort();

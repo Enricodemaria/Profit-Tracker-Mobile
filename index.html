@@ -3487,6 +3487,10 @@
       s+=`<text x="${pad.l+i*bw+bw/2}" y="${h-pad.b+16}" fill="${cssv('--muted')}" font-size="11" text-anchor="middle">${d.label}</text>`;});
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
   }
+  // movimenti in ordine cronologico: per data e, a parità di data, nell'ordine in cui li hai inseriti
+  // (l'elenco tiene i più recenti in cima, quindi indice più alto = inserito prima)
+  const chronoMoves=arr=>arr.map((m,i)=>({m,i})).sort((a,b)=>(a.m.date||'').localeCompare(b.m.date||'')||b.i-a.i).map(x=>x.m);
+  const dLbl=(d,yy)=>{const x=new Date(d);return isNaN(x)?(d||'—'):x.toLocaleDateString('it-IT',yy?{day:'2-digit',month:'2-digit',year:'2-digit'}:{day:'2-digit',month:'2-digit'});};
   function svgLine(data,h,maxLabels,w){
     maxLabels=maxLabels||999;w=w||520;
     const pad={l:46,r:10,t:10,b:40};const iw=w-pad.l-pad.r,ih=h-pad.t-pad.b;
@@ -3497,9 +3501,9 @@
     let s=`<line x1="${pad.l}" y1="${Y(0)}" x2="${pad.l+iw}" y2="${Y(0)}" stroke="${cssv('--line2')}" stroke-width="1"/>`;
     s+=`<polygon points="${area}" fill="${cssv('--green')}" opacity=".13"/>`;
     s+=`<polyline points="${pts}" fill="none" stroke="${cssv('--green')}" stroke-width="1.6"/>`;
-    const skip=Math.max(1,Math.ceil(data.length/maxLabels));
-    data.forEach((d,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(d.value)}" r="2.6" fill="${cssv('--green')}"/>`;
-      if(i%skip===0||i===data.length-1)s+=`<text x="${X(i)}" y="${h-pad.b+16}" fill="${cssv('--muted')}" font-size="11" text-anchor="middle">${d.label}</text>`;});
+    const skip=Math.max(1,Math.ceil(data.length/maxLabels)),n=data.length;let lastLbl=null;
+    data.forEach((d,i)=>{if(n<=250)s+=`<circle cx="${X(i)}" cy="${Y(d.value)}" r="2.6" fill="${cssv('--green')}"/>`;
+      if(((i%skip===0&&n-1-i>=skip*0.6)||i===n-1)&&d.label!==lastLbl){lastLbl=d.label;s+=`<text x="${X(i)}" y="${h-pad.b+16}" fill="${cssv('--muted')}" font-size="11" text-anchor="middle">${d.label}</text>`;}});
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
   }
   // due linee sulla stessa scala (es. profitto reale vs valore atteso), senza punti: regge centinaia di valori
@@ -3514,7 +3518,8 @@
     series.forEach(sr=>{const pts=sr.values.map((v,i)=>`${X(i)},${Y(v)}`).join(' ');
       s+=`<polyline points="${pts}" fill="none" stroke="${sr.color}" stroke-width="1.9" stroke-linejoin="round"${sr.dash?' stroke-dasharray="6 5"':''}/>`;});
     const skip=Math.max(1,Math.ceil(n/maxLabels));
-    labels.forEach((lb,i)=>{if((i%skip===0&&n-1-i>=skip*0.6)||i===n-1)s+=`<text x="${X(i)}" y="${h-pad.b+16}" fill="${cssv('--muted')}" font-size="11" text-anchor="middle">${lb}</text>`;});
+    let lastLbl=null;
+    labels.forEach((lb,i)=>{if(((i%skip===0&&n-1-i>=skip*0.6)||i===n-1)&&lb!==lastLbl&&(lastLbl=lb,true))s+=`<text x="${X(i)}" y="${h-pad.b+16}" fill="${cssv('--muted')}" font-size="11" text-anchor="middle">${lb}</text>`;});
     return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="xMidYMid meet">${s}</svg>`;
   }
   function svgBarH(data,w){
@@ -3664,19 +3669,18 @@
     const rsd=$('rs-stat-diff');rsd.textContent=fmtSigned(rsDiff);rsd.className='big '+(rsDiff>=0?'pos':'neg');
     [rsp,rse,rsd].forEach(autoFitBig);
     // andamento cumulato per giorno: profitto reale contro valore atteso
-    const rsByDay={};
-    rsAll.forEach(m=>{const d=m.date||'';if(!d)return;const o=rsByDay[d]=rsByDay[d]||{p:0,e:0};o.p+=profitOf(m);o.e+=rsEVStored(m)||0;});
-    const rsDays=Object.keys(rsByDay).sort();let cp=0,ce=0;const rsReal=[],rsExp=[];
-    rsDays.forEach(d=>{cp+=rsByDay[d].p;ce+=rsByDay[d].e;rsReal.push(cp);rsExp.push(ce);});
-    const rsLbl=rsDays.map(d=>{const x=new Date(d);return isNaN(x)?d:x.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'});});
+    const rsChrono=chronoMoves(rsAll.filter(m=>m.date));let cp=0,ce=0;const rsReal=[],rsExp=[];
+    rsChrono.forEach(m=>{cp+=profitOf(m);ce+=rsEVStored(m)||0;rsReal.push(cp);rsExp.push(ce);});
+    const rsLbl=rsChrono.map(m=>dLbl(m.date));
     const rsW=chartW('rs-chart-ev',window.innerWidth<700?340:1000);
-    $('rs-chart-ev').innerHTML=rsDays.length>1?svgLine2(rsLbl,[{values:rsReal,color:cssv('--accent')},{values:rsExp,color:cssv('--amber'),dash:true}],280,Math.max(4,Math.floor(rsW/95)),rsW):emptyChart();
+    $('rs-chart-ev').innerHTML=rsChrono.length>1?svgLine2(rsLbl,[{values:rsReal,color:cssv('--accent')},{values:rsExp,color:cssv('--amber'),dash:true}],280,Math.max(4,Math.floor(rsW/95)),rsW):emptyChart();
 
     // charts
     const perMonth=monthsSet.map(mo=>({label:mlabel(mo).split(' ')[0],value:Object.values(grid[mo]).reduce((a,b)=>a+b,0)}));
-    let cum=0;const perCum=monthsSet.map(mo=>{cum+=Object.values(grid[mo]).reduce((a,b)=>a+b,0);return {label:mlabel(mo).split(' ')[0],value:cum};});
+    let cum=0;const perCum=chronoMoves(moves.filter(m=>m.date)).map(m=>{cum+=profitOf(m);return {label:dLbl(m.date,true),value:cum};});
     $('chart-month').innerHTML=perMonth.length?svgBarV(perMonth,250,chartW('chart-month',520)):emptyChart();
-    $('chart-cum').innerHTML=perCum.length?svgLine(perCum,250,999,chartW('chart-cum',520)):emptyChart();
+    const cumW=chartW('chart-cum',520);
+    $('chart-cum').innerHTML=perCum.length?svgLine(perCum,250,Math.max(4,Math.floor(cumW/85)),cumW):emptyChart();
 
     const bookMap=sumBy(m=>m.book);const perBook=Object.entries(bookMap).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,10);
     $('chart-book').innerHTML=perBook.length?svgBarH(perBook,chartW('chart-book',520)):emptyChart();

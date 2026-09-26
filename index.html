@@ -3677,10 +3677,9 @@
 
     // charts
     const perMonth=monthsSet.map(mo=>({label:mlabel(mo).split(' ')[0],value:Object.values(grid[mo]).reduce((a,b)=>a+b,0)}));
-    let cum=0;const perCum=chronoMoves(moves.filter(m=>m.date)).map(m=>{cum+=profitOf(m);return {label:dLbl(m.date,true),value:cum};});
+    let cum=0;const perCum=monthsSet.map(mo=>{cum+=Object.values(grid[mo]).reduce((a,b)=>a+b,0);return {label:mlabel(mo).split(' ')[0],value:cum};});
     $('chart-month').innerHTML=perMonth.length?svgBarV(perMonth,250,chartW('chart-month',520)):emptyChart();
-    const cumW=chartW('chart-cum',520);
-    $('chart-cum').innerHTML=perCum.length?svgLine(perCum,250,Math.max(4,Math.floor(cumW/85)),cumW):emptyChart();
+    $('chart-cum').innerHTML=perCum.length?svgLine(perCum,250,999,chartW('chart-cum',520)):emptyChart();
 
     const bookMap=sumBy(m=>m.book);const perBook=Object.entries(bookMap).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,10);
     $('chart-book').innerHTML=perBook.length?svgBarH(perBook,chartW('chart-book',520)):emptyChart();

@@ -1634,7 +1634,30 @@
 <div class="overlay hidden" id="modal-share">
   <div class="modal" style="max-width:560px">
     <h3>Condividi risultati</h3>
-    <p class="sub">Immagine del periodo scelto nel Riepilogo. Contiene solo i totali: niente ID, book o note.</p>
+    <p class="sub">Contiene solo i totali: niente ID, book o note.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin:4px 0 12px">
+      <div class="field" style="margin:0;min-width:170px"><label>Periodo</label>
+        <select id="sh-per" data-testid="sh-per">
+          <option value="">Sempre</option>
+          <option value="today">Oggi</option>
+          <option value="yesterday">Ieri</option>
+          <option value="week">Ultima settimana</option>
+          <option value="month">Ultimo mese</option>
+          <option value="year">Ultimo anno</option>
+          <option value="ytd">Da inizio anno (YTD)</option>
+          <option value="custom">Personalizzato</option>
+        </select>
+      </div>
+      <div id="sh-custom" class="hidden"><div style="display:flex;gap:8px">
+        <div class="field" style="margin:0"><label>Da</label><input type="date" id="sh-from" data-testid="sh-from"></div>
+        <div class="field" style="margin:0"><label>A</label><input type="date" id="sh-to" data-testid="sh-to"></div>
+      </div></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin:0 0 12px">
+      <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt)"><input type="checkbox" id="sh-mb" data-testid="sh-mb" checked style="width:auto"> Matched Betting</label>
+      <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt)"><input type="checkbox" id="sh-mg" data-testid="sh-mg" checked style="width:auto"> Maggiorate</label>
+      <label style="display:flex;align-items:center;gap:7px;margin:0;text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt)"><input type="checkbox" id="sh-rs" data-testid="sh-rs" checked style="width:auto"> Rimborso Slot</label>
+    </div>
     <img id="share-img" data-testid="share-img" alt="Anteprima dei risultati" style="width:100%;border-radius:12px;display:block;margin-top:6px">
     <div class="modal-actions">
       <button class="btn ghost" data-close="modal-share">Chiudi</button>
@@ -3670,35 +3693,44 @@
   }
   $('r-preset').addEventListener('change',()=>{localStorage.setItem('tk_sum_period',val('r-preset'));renderSummary();});
 
-  // ---- statino da condividere: immagine JPG (1080×1350) con i totali del periodo scelto ----
-  function buildShareCanvas(){
-    const per=localStorage.getItem('tk_sum_period')||'',rng=presetRange(per);
-    const pm=moves.filter(m=>m.date&&(!rng||(m.date>=rng.from&&m.date<=rng.to)));
-    const sum=f=>pm.filter(f).reduce((s,m)=>s+profitOf(m),0);
-    const tot=sum(()=>true),mb=sum(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot'),mg=sum(m=>m.type==='Maggiorate'),rs=sum(m=>m.type==='Rimborso Slot');
-    const opt=$('r-preset').selectedOptions[0],perLabel=opt?opt.textContent.trim():'Sempre';
+  // ---- statino da condividere: immagine JPG (1080×1350) con periodo e categorie scelti nella finestra ----
+  const SH_CATS=[['mb','Matched Betting','#45b393',m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot'],['mg','Maggiorate','#dfa94f',m=>m.type==='Maggiorate'],['rs','Rimborso Slot','#9b8ad4',m=>m.type==='Rimborso Slot']];
+  function shareOpts(){
+    const per=val('sh-per');
+    const rng=per==='custom'?((val('sh-from')||val('sh-to'))?{from:val('sh-from')||'0000-00-00',to:val('sh-to')||'9999-99-99',custom:true}:null):presetRange(per);
+    return {per,rng,cats:SH_CATS.filter(c=>$('sh-'+c[0]).checked)};
+  }
+  function buildShareCanvas(o){
+    const {rng,cats}=o;
+    const pm=moves.filter(m=>m.date&&(!rng||(m.date>=rng.from&&m.date<=rng.to))&&cats.some(c=>c[3](m)));
+    const tot=pm.reduce((s,m)=>s+profitOf(m),0);
+    const opt=$('sh-per').selectedOptions[0];
+    const perLabel=o.per==='custom'?'Periodo personalizzato':(opt?opt.textContent.trim():'Sempre');
     const ds=pm.map(m=>m.date).sort();
-    const rangeTxt=rng?(rng.from===rng.to?fmtDateIt(rng.from):`${fmtDateIt(rng.from)} – ${fmtDateIt(rng.to)}`):(ds.length?`${fmtDateIt(ds[0])} – ${fmtDateIt(ds[ds.length-1])}`:'');
+    const a=rng&&!rng.custom?rng.from:(rng&&rng.from!=='0000-00-00'?rng.from:ds[0]),b=rng&&!rng.custom?rng.to:(rng&&rng.to!=='9999-99-99'?rng.to:ds[ds.length-1]);
+    const rangeTxt=a&&b?(a===b?fmtDateIt(a):`${fmtDateIt(a)} – ${fmtDateIt(b)}`):'';
     const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
     const F='system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif';
-    const G='#45b393',R='#e0705f',A='#dfa94f',P='#9b8ad4',ACC='#6d8fd8',TXT='#e8edf5',MUT='#95a1b5';
+    const G='#45b393',R='#e0705f',ACC='#6d8fd8',TXT='#e8edf5',MUT='#95a1b5';
     const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#162033');bg.addColorStop(1,'#0b0f16');x.fillStyle=bg;x.fillRect(0,0,W,H);
     const box=(X,Y,w,h,r)=>{x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();};
     const money=v=>(v>=0?'+':'−')+'€ '+Math.abs(v).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
-    x.fillStyle=ACC;x.font=`700 30px ${F}`;x.fillText('Profit Tracker',80,118);
-    x.fillStyle=TXT;x.font=`700 76px ${F}`;x.fillText('Risultati',80,200);
+    const single=cats.length===1;
+    x.fillStyle=single?cats[0][2]:ACC;x.font=`700 30px ${F}`;x.fillText('Profit Tracker',80,118);
+    x.fillStyle=TXT;x.font=`700 76px ${F}`;x.fillText(single?cats[0][1]:'Risultati',80,200);
     x.fillStyle=MUT;x.font=`400 32px ${F}`;x.fillText(perLabel+(rangeTxt?'   '+rangeTxt:''),80,252);
     x.fillStyle=MUT;x.font=`600 30px ${F}`;x.fillText('Totale',80,346);
     x.fillStyle=tot>=0?G:R;x.font=`800 120px ${F}`;x.fillText(money(tot),74,466);
     let y=526;
-    [['Matched Betting',mb,G],['Maggiorate',mg,A],['Rimborso Slot',rs,P]].forEach(([lbl,v,col])=>{
+    if(!single)cats.forEach(([,lbl,col,f])=>{
+      const v=pm.filter(f).reduce((s,m)=>s+profitOf(m),0);
       box(80,y,W-160,104,22);x.fillStyle='rgba(255,255,255,.055)';x.fill();
       box(80,y,12,104,6);x.fillStyle=col;x.fill();
       x.fillStyle=TXT;x.font=`600 36px ${F}`;x.fillText(lbl,122,y+65);
       x.fillStyle=v>=0?G:R;x.font=`700 40px ${F}`;x.textAlign='right';x.fillText(money(v),W-112,y+66);x.textAlign='left';
       y+=124;
     });
-    const cx=80,cw=W-160,top=y+34,chh=250;
+    const cx=80,cw=W-160,top=y+34,chh=Math.max(250,H-170-(top+34));
     x.fillStyle=MUT;x.font=`600 28px ${F}`;x.fillText('Andamento',cx,top);
     let cum=0;const pts=chronoMoves(pm).map(m=>cum+=profitOf(m));
     if(pts.length>1){
@@ -3709,21 +3741,34 @@
       x.beginPath();pts.forEach((v,i)=>i?x.lineTo(X(i),Y(v)):x.moveTo(X(i),Y(v)));
       x.strokeStyle=lc;x.lineWidth=5;x.lineJoin='round';x.stroke();
       x.lineTo(X(pts.length-1),Y(0));x.lineTo(X(0),Y(0));x.closePath();x.fillStyle=up?'rgba(69,179,147,.14)':'rgba(224,112,95,.14)';x.fill();
-    } else {x.fillStyle=MUT;x.font=`400 28px ${F}`;x.fillText('Troppi pochi movimenti nel periodo per il grafico',cx,top+70);}
+    } else {x.fillStyle=MUT;x.font=`400 28px ${F}`;x.fillText(pts.length?'Troppi pochi movimenti nel periodo per il grafico':'Nessun movimento nel periodo scelto',cx,top+70);}
     x.fillStyle=MUT;x.font=`400 28px ${F}`;x.fillText(`${pm.length} movimenti`,80,H-72);
     x.textAlign='right';x.fillText('Generato il '+new Date().toLocaleDateString('it-IT'),W-80,H-72);x.textAlign='left';
     return c;
   }
-  let shareBlob=null;
-  const shareName=()=>`risultati-${isoDate(new Date())}.jpg`;
-  $('r-share').addEventListener('click',()=>{
-    buildShareCanvas().toBlob(b=>{
-      if(!b)return;shareBlob=b;$('share-img').src=URL.createObjectURL(b);
+  let shareBlob=null,shareSeq=0;
+  const shareName=()=>{const o=shareOpts();return `risultati${o.cats.length===1?'-'+o.cats[0][1].toLowerCase().replace(/\s+/g,'-'):''}-${isoDate(new Date())}.jpg`;};
+  function refreshShare(){
+    const o=shareOpts(),seq=++shareSeq;
+    $('sh-custom').classList.toggle('hidden',o.per!=='custom');
+    localStorage.setItem('tk_share_cats',JSON.stringify(o.cats.map(c=>c[0])));
+    buildShareCanvas(o).toBlob(b=>{
+      if(!b||seq!==shareSeq)return;shareBlob=b;$('share-img').src=URL.createObjectURL(b);
       let can=false;try{can=!!(navigator.canShare&&navigator.canShare({files:[new File([b],shareName(),{type:'image/jpeg'})]}));}catch(e){}
       $('share-go').classList.toggle('hidden',!can);
-      $('modal-share').classList.remove('hidden');
     },'image/jpeg',0.92);
+  }
+  $('r-share').addEventListener('click',()=>{
+    $('sh-per').value=localStorage.getItem('tk_sum_period')||'';
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('tk_share_cats'));}catch(e){}
+    SH_CATS.forEach(c=>{$('sh-'+c[0]).checked=!Array.isArray(saved)||!saved.length||saved.includes(c[0]);});
+    refreshShare();$('modal-share').classList.remove('hidden');
   });
+  ['sh-per','sh-from','sh-to'].forEach(id=>$(id).addEventListener('change',refreshShare));
+  SH_CATS.forEach(c=>$('sh-'+c[0]).addEventListener('change',e=>{
+    if(!SH_CATS.some(k=>$('sh-'+k[0]).checked)){e.target.checked=true;return;} // almeno una categoria
+    refreshShare();
+  }));
   $('share-dl').addEventListener('click',()=>{if(!shareBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(shareBlob);a.download=shareName();document.body.appendChild(a);a.click();a.remove();});
   $('share-go').addEventListener('click',async()=>{if(!shareBlob)return;try{await navigator.share({files:[new File([shareBlob],shareName(),{type:'image/jpeg'})],title:'Risultati'});}catch(e){}});
   function renderSummary(){

@@ -79,9 +79,23 @@
   .rs-group.rs-open td{border-bottom-color:transparent}
   .rs-child td{background:rgba(255,255,255,.02)}
   .rs-child td:first-child{padding-left:24px}
+  #rs-moves-rows .rs-warn-badge{white-space:normal;margin-left:0}
+  #rs-moves-rows td[data-label="Mon"]{grid-column:1/3;grid-row:9;min-width:0}
+  #rs-moves-rows td[data-label="Mon"] .rs-mon-btn{width:100%;margin-top:6px;padding:8px 10px;font-size:13px}
   #rs-moves-rows tr.rs-child,#moves-rows tr.rs-child{margin-left:14px;border-style:dashed;background:rgba(255,255,255,.02)}
   #rs-moves-rows tr.rs-child td,#moves-rows tr.rs-child td{background:none}
   #rs-moves-rows tr.rs-child td:first-child,#moves-rows tr.rs-child td:first-child{padding-left:0}
+  /* finestra Monetizza bonus: una scheda per ID invece della tabella larga */
+  .rsm-table thead{display:none}
+  .rsm-table tr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 8px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .rsm-table td{border:none!important;padding:0!important;text-align:left}
+  .rsm-table td:nth-child(1){grid-column:1/3;font-size:15px}
+  .rsm-table td:nth-child(2){grid-column:3;text-align:right}
+  .rsm-table td:nth-child(6){grid-column:1/-1;text-align:right;font-weight:700}
+  .rsm-table td[data-l]::before{content:attr(data-l);display:block;font-size:10.5px;color:var(--dim);margin-bottom:3px;font-weight:600}
+  .rsm-table td:nth-child(6)::before{display:inline;margin-right:8px}
+  .rsm-table input{max-width:none;width:100%;padding:8px 8px}
+  .rsm-table th,.rsm-table td{padding-left:6px;padding-right:6px}
   .rs-warn-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;background:var(--amber);color:#1a1400;border-radius:999px;padding:2px 8px;margin-left:6px;white-space:nowrap}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
@@ -364,7 +378,7 @@
     #moves table thead{display:none}
     #moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
     #mg-moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
-    #rs-moves-rows tr{display:grid;grid-template-columns:1fr 1fr auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
+    #rs-moves-rows tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;column-gap:10px;row-gap:4px;padding:15px 16px;margin-bottom:10px;background:var(--bg2);border:1px solid var(--line);border-radius:var(--r-sm);cursor:pointer}
     #moves-rows td,#mg-moves-rows td,#rs-moves-rows td{border:none;padding:0;font-size:13px;white-space:normal!important;max-width:none!important}
     #moves-rows td[data-label="Data"]{grid-column:1;grid-row:1;color:var(--dim);font-size:12px}
     #moves-rows td[data-label="ID"]{grid-column:2;grid-row:1;text-align:right;font-weight:600}
@@ -1614,6 +1628,25 @@
   </div>
 </div>
 
+<!-- ===== MODAL: monetizza bonus (rimborso slot) ===== -->
+<div class="overlay hidden" id="modal-rs-mon">
+  <div class="modal" style="max-width:780px">
+    <h3>Monetizza bonus</h3>
+    <p class="sub" id="rsm-summary"></p>
+    <div style="overflow-x:auto">
+      <table class="rsm-table">
+        <thead><tr><th>ID</th><th class="num">Rimborso atteso</th><th class="num">Saldo iniziale</th><th class="num">di cui bonus</th><th class="num">Saldo finale</th><th class="num">Monetizzato</th></tr></thead>
+        <tbody id="rsm-rows" data-testid="rsm-rows"></tbody>
+      </table>
+    </div>
+    <p class="sub" style="text-align:right;margin:10px 0 0">Totale monetizzato: <b id="rsm-total" data-testid="rsm-total">€ 0,00</b></p>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-rs-mon">Annulla</button>
+      <button class="btn" id="rsm-save" data-testid="rsm-save">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: regole bonus Fun per book ===== -->
 <div class="overlay hidden" id="modal-funrules">
   <div class="modal" style="max-width:600px">
@@ -2271,10 +2304,11 @@
         `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
         `<td class="num" data-label="EV" style="color:var(${evS===null?'--dim':evS>=0?'--green':'--red'})">${evS===null?'–':fmtSigned(evS)}</td>`+
         `<td data-label="Note" style="white-space:normal;max-width:170px">${esc(m.notes)}</td>`+
-        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
+        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`+(!child&&att.netto<0?`<td data-label="Mon"><button class="btn ghost rs-mon-btn" data-testid="rs-mon-btn" title="Monetizza bonus">Monetizza bonus</button></td>`:'');
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRimborso(m.uid);});
       tr.addEventListener('click',()=>openRimborso(m.uid));
+      const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize([m]);});
       if(child)tr.classList.add('rs-child');
       return tr;
   }
@@ -2304,7 +2338,8 @@
       `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
       `<td class="num" data-label="EV" style="color:var(${ev===null?'--dim':ev>=0?'--green':'--red'})">${ev===null?'–':fmtSigned(ev)}</td>`+
       `<td data-label="Note" style="white-space:nowrap">${esc(f.notes)}</td>`+
-      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`+(g.some(m=>rimborsoAttesi(m).netto<0)?`<td data-label="Mon"><button class="btn ghost rs-mon-btn" data-testid="rs-mon-btn" title="Monetizza bonus">Monetizza bonus</button></td>`:'');
+    const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize(g.filter(m=>rimborsoAttesi(m).netto<0));});
     tr.addEventListener('click',()=>{open?rsExpanded.delete(k):rsExpanded.add(k);renderMoves();});
     return tr;
   }
@@ -2471,6 +2506,52 @@
   }
   $('rs-rows').addEventListener('input',updateRsTotal);
 
+
+  // ---- monetizza bonus: saldo iniziale / di cui bonus / saldo finale per ogni ID che riceve il rimborso ----
+  // monetizzato = saldo finale − saldo iniziale + di cui bonus (stessa formula dei movimenti normali);
+  // il risultato va nel Bonus Monetizzato del singolo movimento, lo schema resta salvato (rsMon)
+  function openRsMonetize(list){
+    const f=list[0];
+    $('rsm-summary').textContent=`${f.date} · ${f.book}${f.notes?' · '+f.notes:''} — per ogni ID: saldo iniziale con il bonus già accreditato, di cui bonus, e saldo finale dopo averlo giocato. Le ID lasciate vuote non vengono modificate.`;
+    const tb=$('rsm-rows');tb.innerHTML='';
+    const v=x=>x===undefined||x===null?'':String(x).replace('.',',');
+    [...list].sort((a,b)=>(a.pid||'').localeCompare(b.pid||'')).forEach(m=>{
+      const a=rimborsoAttesi(m),mon=m.rsMon||{};
+      const def=Math.round((a.realAtteso+a.funAtteso)*100)/100;
+      const tr=document.createElement('tr');tr.dataset.uid=m.uid;
+      tr.innerHTML=`<td><b>${esc(m.pid)}</b></td><td class="num" style="color:var(--amber)">${fmt(def)}</td>`+
+        `<td class="num" data-l="Saldo iniziale"><input class="num rsm-start" data-testid="rsm-start" value="${v(mon.start)}" placeholder="0"></td>`+
+        `<td class="num" data-l="di cui bonus"><input class="num rsm-bonus" data-testid="rsm-bonus" value="${v(mon.bonus!==undefined?mon.bonus:def)}"></td>`+
+        `<td class="num" data-l="Saldo finale"><input class="num rsm-end" data-testid="rsm-end" value="${v(mon.end)}" placeholder="0"></td>`+
+        `<td class="num rsm-res" data-l="Monetizzato">–</td>`;
+      tb.appendChild(tr);
+    });
+    rsmUpdate();
+    $('modal-rs-mon').classList.remove('hidden');
+  }
+  function rsmCalc(tr){
+    const s=tr.querySelector('.rsm-start').value.trim(),e=tr.querySelector('.rsm-end').value.trim();
+    if(s===''||e==='')return null;
+    return (numParse(e)||0)-(numParse(s)||0)+(numParse(tr.querySelector('.rsm-bonus').value)||0);
+  }
+  function rsmUpdate(){
+    let tot=0;
+    [...$('rsm-rows').children].forEach(tr=>{const r=rsmCalc(tr),c=tr.querySelector('.rsm-res');
+      if(r===null){c.textContent='–';c.style.color='var(--dim)';}else{tot+=r;c.textContent=fmt(r);c.style.color=r>=0?'var(--green)':'var(--red)';}});
+    $('rsm-total').textContent=fmt(tot);
+  }
+  $('rsm-rows').addEventListener('input',rsmUpdate);
+  $('rsm-save').addEventListener('click',()=>{
+    let n=0;
+    [...$('rsm-rows').children].forEach(tr=>{
+      const r=rsmCalc(tr);if(r===null)return;
+      const i=moves.findIndex(x=>x.uid===tr.dataset.uid);if(i<0)return;
+      moves[i]={...moves[i],rsBonusMon:String(Math.round(r*100)/100),
+        rsMon:{start:tr.querySelector('.rsm-start').value.trim(),bonus:tr.querySelector('.rsm-bonus').value.trim(),end:tr.querySelector('.rsm-end').value.trim()}};n++;
+    });
+    if(!n){alert('Compila saldo iniziale e finale di almeno una ID.');return;}
+    save();renderMoves();$('modal-rs-mon').classList.add('hidden');
+  });
   // ---- regole bonus Fun: finestra di modifica ----
   function frAddRow(book,rollover,cap){
     const list=(books.length?books:DEFAULT_BOOKS).slice();

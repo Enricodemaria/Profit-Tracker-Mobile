@@ -47,6 +47,9 @@
   /* pulsanti di inserimento: stesso colore della categoria (Matched Betting verde, Maggiorate ambra, Rimborso Slot viola) */
   .btn.mv-green{background:var(--green);border-color:var(--green);color:#06140f}
   .btn.mv-green-ghost{background:rgba(69,179,147,.12);color:var(--green);border-color:var(--green)}
+  .btn.mv-purple-ghost{background:rgba(155,138,212,.12);color:var(--purple);border-color:var(--purple)}
+  .rs-bonus-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(155,138,212,.18);color:var(--purple);border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
+  #rs-moves-rows tr.rs-bonus-row td.rsb-empty{display:none}
   .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
   body.light .btn.mv-green,html.light .btn.mv-green{color:#fff}
   .btn.blue:hover{background:var(--accent);color:var(--btn-txt);filter:none}
@@ -841,6 +844,7 @@
       <button class="btn mv-green" id="btnSingle" data-testid="btn-single">+ Movimento singolo</button>
       <button class="btn" id="btnMaggiorata" data-testid="btn-maggiorata" style="background:var(--amber);color:#1a1400;border-color:var(--amber)">+ Maggiorata</button>
       <button class="btn mv-purple" id="btnRimborso" data-testid="btn-rimborso">+ Rimborso Slot</button>
+      <button class="btn mv-purple-ghost" id="btnRsBonus" data-testid="btn-rsbonus">+ Bonus</button>
       <button class="btn ghost" id="btnDrafts" data-testid="btn-drafts">Movimenti da completare<span class="badge hidden" id="drafts-badge" data-testid="drafts-badge" style="margin-left:6px"></span></button>
       <button class="btn mv-green-ghost hidden" id="btnBatch" data-testid="btn-batch">+ Inserimento multiplo</button>
       <button class="btn ghost hidden" id="btnCsv" data-testid="btn-csv" style="margin-left:auto">Esporta CSV</button>
@@ -914,7 +918,7 @@
 
       <div id="mv-pane-rimborso" class="mpane hidden">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px">
-          <p class="sub" style="margin:0;flex:1 1 260px">Le righe con scadenza già passata e senza Bonus Monetizzato ancora inserito salgono in cima, come promemoria.</p>
+          <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti (Fun convertito o Real) si inseriscono a parte con "+ Bonus": sommano al profitto senza essere collegati a una promo.</p>
           <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
             <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
             <button class="btn ghost" id="btnFunRules" data-testid="btn-funrules">Regole bonus Fun</button>
@@ -924,7 +928,7 @@
           <thead><tr>
             <th data-sort="date">Data</th><th data-sort="pid">ID</th><th data-sort="book">Book</th><th data-sort="scadenza">Scadenza</th>
             <th class="num" data-sort="start">Saldo iniziale</th><th class="num" data-sort="end">Saldo finale</th><th class="num" data-sort="netto">Netto Qual.</th>
-            <th class="num" data-sort="realatteso">Real atteso</th><th class="num" data-sort="funatteso">Fun atteso</th><th class="num" data-sort="bonusmon">Bonus Monetizzato</th><th class="num" data-sort="profit">Profitto</th><th class="num" data-sort="ev" title="Valore atteso inserito da te">EV</th><th>Note</th><th></th>
+            <th class="num" data-sort="realatteso">Real atteso</th><th class="num" data-sort="funatteso">Fun atteso</th><th class="num" data-sort="bonusmon">Bonus</th><th class="num" data-sort="profit">Profitto</th><th class="num" data-sort="ev" title="Valore atteso inserito da te">EV</th><th>Note</th><th></th>
           </tr></thead>
           <tbody id="rs-moves-rows" data-testid="rs-moves-rows"></tbody>
         </table>
@@ -1027,10 +1031,10 @@
         <div class="grid6" style="margin-bottom:0">
           <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="rs-stat-profit" data-testid="rs-stat-profit">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Totale promo</div><div class="big" id="rs-stat-count" data-testid="rs-stat-count">0</div></div>
-          <div class="mgmini"><div class="lbl">Real da ricevere</div><div class="big" id="rs-stat-real" data-testid="rs-stat-real">€ 0,00</div></div>
-          <div class="mgmini"><div class="lbl">Fun da ricevere</div><div class="big" id="rs-stat-fun" data-testid="rs-stat-fun">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Bonus inseriti</div><div class="big" id="rs-stat-real" data-testid="rs-stat-real">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Rimborsi attesi</div><div class="big" id="rs-stat-fun" data-testid="rs-stat-fun">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Valore atteso</div><div class="big" id="rs-stat-ev" data-testid="rs-stat-ev">€ 0,00</div></div>
-          <div class="mgmini" title="Profitto reale meno valore atteso, solo sulle promo chiuse"><div class="lbl">Scarto vs atteso</div><div class="big" id="rs-stat-diff" data-testid="rs-stat-diff">€ 0,00</div></div>
+          <div class="mgmini" title="Profitto reale (bonus compresi) meno valore atteso"><div class="lbl">Scarto vs atteso</div><div class="big" id="rs-stat-diff" data-testid="rs-stat-diff">€ 0,00</div></div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px">
           <div class="chart-title" style="font-size:11.5px;color:var(--dim);margin:0">Profitto reale vs valore atteso (cumulati)</div>
@@ -1629,6 +1633,27 @@
   </div>
 </div>
 
+<!-- ===== MODAL: bonus rimborso (non collegato a una promo) ===== -->
+<div class="overlay hidden" id="modal-rsbonus">
+  <div class="modal" style="max-width:560px">
+    <h3>Bonus</h3>
+    <p class="sub">Un bonus ricevuto (Fun convertito o Real), senza collegarlo a una promo. Va nei Rimborso Slot e somma al profitto.</p>
+    <div class="mform">
+      <div><label>Data</label><input type="date" id="rb-date" data-testid="rb-date"></div>
+      <div><label>ID</label><select id="rb-id" data-testid="rb-id"></select></div>
+      <div><label>Book</label><select id="rb-book" data-testid="rb-book"></select></div>
+      <div><label>Tipo</label><select id="rb-kind" data-testid="rb-kind"><option value="fun">Fun convertito</option><option value="real">Real</option></select></div>
+      <div><label>Importo €</label><input class="num" id="rb-amount" data-testid="rb-amount" placeholder="0"></div>
+      <div></div>
+      <div class="full"><label>Note</label><input id="rb-notes" data-testid="rb-notes" placeholder="facoltativo"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close="modal-rsbonus">Annulla</button>
+      <button class="btn" id="rb-save" data-testid="rb-save">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: condividi risultati (statino JPG) ===== -->
 <div class="overlay hidden" id="modal-share">
   <div class="modal" style="max-width:560px">
@@ -2017,7 +2042,7 @@
   function rsFreezeEV(){let n=0;moves.forEach(m=>{if(m.type==='Rimborso Slot'&&m.rsEV===undefined){m.rsEV=String(rsEVSuggest(m).ev);n++;}});
     // correzione una tantum: tutte le Betsson inserite fino al 24/09/2026 a 4€. Il segno rsEVb4 evita di
     // riapplicarla, quindi un EV cambiato a mano dopo non viene sovrascritto; le righe nuove non vengono toccate.
-    moves.forEach(m=>{if(m.type==='Rimborso Slot'&&String(m.book||'').trim().toLowerCase()==='betsson'&&!m.rsEVb4&&(m.date||'')<='2026-09-24'){m.rsEV='4';m.rsEVb4=1;n++;}});
+    moves.forEach(m=>{if(m.type==='Rimborso Slot'&&m.rsKind!=='bonus'&&String(m.book||'').trim().toLowerCase()==='betsson'&&!m.rsEVb4&&(m.date||'')<='2026-09-24'){m.rsEV='4';m.rsEVb4=1;n++;}});
     return n;}
   const fmtSigned=v=>(v>=0?'+':'')+fmt(v);
 
@@ -2204,7 +2229,7 @@
     const sortState=mvSort[mvActiveTab];
     if(mvActiveTab==='rimborso'){
       const today=new Date().toISOString().slice(0,10);
-      const needsAttn=m=>m.scadenza&&m.scadenza<today&&(m.rsBonusMon===undefined||m.rsBonusMon==='')&&rimborsoAttesi(m).netto<0;
+      const needsAttn=()=>false; // promemoria tolto: il bonus non si monetizza più sulla promo
       const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
       const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
       displayed=[...overdue,...rest];
@@ -2324,13 +2349,30 @@
   }
 
   // una riga per ID (usata da sola, o dentro un gruppo aperto)
+  // riga di un bonus inserito con "+ Bonus": nessuna promo, conta solo l'importo
+  function rsBonusRow(m,child){
+    const v=numParse(m.rsBonusMon)||0;
+    const tr=document.createElement('tr');tr.className='clickable rs-bonus-row';
+    tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)} <span class="rs-bonus-badge">${m.rsBonusKind==='real'?'Bonus Real':'Bonus Fun'}</span></td><td data-label="Book">${esc(m.book)}</td>`+
+      `<td class="rsb-empty" data-label="Scadenza">–</td><td class="num rsb-empty" data-label="Saldo iniziale">–</td><td class="num rsb-empty" data-label="Saldo finale">–</td><td class="num rsb-empty" data-label="Netto Qual.">–</td>`+
+      `<td class="num rsb-empty" data-label="Real atteso">–</td><td class="num rsb-empty" data-label="Fun atteso">–</td>`+
+      `<td class="num" data-label="Bonus Monetizzato">${fmt(v)}</td><td class="num ${v>=0?'pos':'neg'}" data-label="Profitto">${fmt(v)}</td><td class="num rsb-empty" data-label="EV" style="color:var(--dim)">–</td>`+
+      `<td class="note-cell" data-label="Note" title="${escA(m.notes)}">${esc(m.notes)}</td>`+
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
+    tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo bonus?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
+    tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRsBonus(m.uid);});
+    tr.addEventListener('click',()=>openRsBonus(m.uid));
+    if(child)tr.classList.add('rs-child');
+    return tr;
+  }
   function rsRow(m,child){
+    if(m.rsKind==='bonus')return rsBonusRow(m,child);
     const today=new Date().toISOString().slice(0,10);
       const p=profitOf(m);
       const att=rimborsoAttesi(m);
       const evS=rsEVStored(m);
       const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
-      const overdue=m.scadenza&&m.scadenza<today&&!bmSet&&att.netto<0;
+      const overdue=false; // niente promemoria: i bonus si inseriscono a parte con "+ Bonus"
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
         `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Scaduta, manca ancora il Bonus Monetizzato">Da controllare</span>':''}</td>`+
@@ -2339,11 +2381,11 @@
         `<td class="num ${att.netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(att.netto)}</td>`+
         `<td class="num" data-label="Real atteso" style="color:var(--amber)">${att.realAtteso?fmt(att.realAtteso):'–'}</td>`+
         `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${att.funAtteso?fmt(att.funAtteso):'–'}</td>`+
-        `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):(att.netto>=0?'<span class="note" style="margin:0">non dovuto</span>':'<span class="note" style="margin:0">da inserire</span>')}</td>`+
+        `<td class="num" data-label="Bonus Monetizzato">${bmSet?fmt(numParse(m.rsBonusMon)):'–'}</td>`+
         `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
         `<td class="num" data-label="EV" style="color:var(${evS===null?'--dim':evS>=0?'--green':'--red'})">${evS===null?'–':fmtSigned(evS)}</td>`+
         `<td data-label="Note" class="note-cell" title="${escA(m.notes)}">${esc(m.notes)}</td>`+
-        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`+(!child&&att.netto<0?`<td data-label="Mon"><button class="btn ghost rs-mon-btn" data-testid="rs-mon-btn" title="Monetizza bonus">Monetizza bonus</button></td>`:'');
+        `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-edit="${m.uid}" title="Modifica">✎</button><button class="iconbtn del" data-del="${m.uid}" title="Elimina">✕</button></td>`;
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRimborso(m.uid);});
       tr.addEventListener('click',()=>openRimborso(m.uid));
@@ -2354,7 +2396,7 @@
   // righe della stessa promo: salvate insieme dal modulo (rsGroup), oppure, per quelle vecchie,
   // stessa data, book, note e parametri della promo
   const rsExpanded=new Set();
-  const rsGroupKey=m=>m.rsGroup||[m.date,m.book,(m.notes||'').trim().toLowerCase(),m.scadenza||'',m.rsRealPct||'',m.rsRealMax||'',m.rsFunPct||'',m.rsFunMax||''].join('|');
+  const rsGroupKey=m=>m.rsKind==='bonus'?'bonus:'+m.uid:m.rsGroup||[m.date,m.book,(m.notes||'').trim().toLowerCase(),m.scadenza||'',m.rsRealPct||'',m.rsRealMax||'',m.rsFunPct||'',m.rsFunMax||''].join('|');
   function rsGroupRow(k,g,overdue){
     const sum=fn=>g.reduce((s,m)=>s+fn(m),0);
     const att=g.map(rimborsoAttesi);
@@ -2373,11 +2415,11 @@
       `<td class="num ${netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(netto)}</td>`+
       `<td class="num" data-label="Real atteso" style="color:var(--amber)">${real?fmt(real):'–'}</td>`+
       `<td class="num" data-label="Fun atteso" style="color:var(--amber)">${fun?fmt(fun):'–'}</td>`+
-      `<td class="num" data-label="Bonus Monetizzato">${missing?`<span class="note" style="margin:0">da inserire (${missing})</span>`:fmt(bm)}</td>`+
+      `<td class="num" data-label="Bonus Monetizzato">${bm?fmt(bm):'–'}</td>`+
       `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
       `<td class="num" data-label="EV" style="color:var(${ev===null?'--dim':ev>=0?'--green':'--red'})">${ev===null?'–':fmtSigned(ev)}</td>`+
       `<td data-label="Note" class="note-cell" title="${escA(f.notes)}">${esc(f.notes)}</td>`+
-      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`+(g.some(m=>rimborsoAttesi(m).netto<0)?`<td data-label="Mon"><button class="btn ghost rs-mon-btn" data-testid="rs-mon-btn" title="Monetizza bonus">Monetizza bonus</button></td>`:'');
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
     const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize(g.filter(m=>rimborsoAttesi(m).netto<0));});
     tr.addEventListener('click',()=>{open?rsExpanded.delete(k):rsExpanded.add(k);renderMoves();});
     return tr;
@@ -2604,6 +2646,29 @@
     });
     if(!n){alert('Compila almeno una ID.');return;}
     save();renderMoves();$('modal-rs-mon').classList.add('hidden');
+  });
+  // ---- "+ Bonus": bonus ricevuto (Fun convertito o Real) salvato da solo, senza collegarlo a una promo ----
+  let rbEditUid=null;
+  function openRsBonus(u){
+    refreshSelects();rbEditUid=u||null;
+    const m=u?moves.find(x=>x.uid===u):null;
+    fillSelect($('rb-id'),ids.map(x=>x.label));fillSelect($('rb-book'),books.length?books:DEFAULT_BOOKS);
+    $('rb-date').value=m?m.date:isoDate(new Date());
+    if(m){$('rb-id').value=m.pid;$('rb-book').value=m.book;}
+    $('rb-kind').value=m&&m.rsBonusKind==='real'?'real':'fun';
+    $('rb-amount').value=m?String(m.rsBonusMon||'').replace('.',','):'';
+    $('rb-notes').value=m?(m.notes||''):'';
+    $('modal-rsbonus').classList.remove('hidden');
+  }
+  $('btnRsBonus').addEventListener('click',()=>{if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}openRsBonus();});
+  $('rb-save').addEventListener('click',()=>{
+    const v=numParse(val('rb-amount'));if(isNaN(v)){alert("Inserisci l'importo del bonus.");return;}
+    if(!val('rb-date')){alert('Imposta la data.');return;}
+    const rec={date:val('rb-date'),pid:val('rb-id'),book:val('rb-book'),type:'Rimborso Slot',game:'Slot',rsKind:'bonus',rsBonusKind:val('rb-kind'),
+      start:'0',end:'0',rsBonusMon:String(Math.round(v*100)/100),rsEV:'',notes:val('rb-notes')};
+    if(rbEditUid){const i=moves.findIndex(x=>x.uid===rbEditUid);if(i>=0)moves[i]={...moves[i],...rec};}
+    else moves.unshift({uid:uid(),...rec});
+    save();renderMoves();$('modal-rsbonus').classList.add('hidden');
   });
   // ---- regole bonus Fun: finestra di modifica ----
   function frAddRow(book,rollover,cap){
@@ -3903,17 +3968,16 @@
     const rsAll=moves.filter(m=>m.type==='Rimborso Slot');
     const rsProfit=rsAll.reduce((s,m)=>s+profitOf(m),0);
     const rsp=$('rs-stat-profit');rsp.textContent=fmt(rsProfit);rsp.className='big '+(rsProfit>=0?'pos':'neg');
-    $('rs-stat-count').textContent=rsAll.length;
-    const rsPending=rsAll.filter(m=>m.rsBonusMon===undefined||m.rsBonusMon==='');
-    const rsRealPend=rsPending.reduce((s,m)=>s+rimborsoAttesi(m).realAtteso,0);
-    const rsFunPend=rsPending.reduce((s,m)=>s+rimborsoAttesi(m).funAtteso,0);
-    $('rs-stat-real').textContent=fmt(rsRealPend);
-    $('rs-stat-fun').textContent=fmt(rsFunPend);
+    $('rs-stat-count').textContent=rsAll.filter(m=>m.rsKind!=='bonus').length;
+    // bonus inseriti con "+ Bonus" e rimborsi che ti spettavano sulle promo (Real + Fun atteso): confrontandoli vedi la resa
+    const rsBonusTot=rsAll.reduce((s,m)=>s+(numParse(m.rsBonusMon)||0),0); // bonus con "+ Bonus" e quelli già registrati dentro le promo
+    const rsAttesi=rsAll.filter(m=>m.rsKind!=='bonus').reduce((s,m)=>{const a=rimborsoAttesi(m);return s+a.realAtteso+a.funAtteso;},0);
+    $('rs-stat-real').textContent=fmt(rsBonusTot);
+    $('rs-stat-fun').textContent=fmt(rsAttesi);
     const rsEvTot=rsAll.reduce((s,m)=>s+(rsEVStored(m)||0),0);
     const rse=$('rs-stat-ev');rse.textContent=fmtSigned(rsEvTot);rse.className='big '+(rsEvTot>=0?'pos':'neg');
     // scarto solo sulle promo chiuse (vinte, oppure perse con Bonus Monetizzato già inserito)
-    const rsClosed=rsAll.filter(m=>rimborsoAttesi(m).netto>=0||!(m.rsBonusMon===undefined||m.rsBonusMon===''));
-    const rsDiff=rsClosed.filter(m=>rsEVStored(m)!==null).reduce((s,m)=>s+profitOf(m)-rsEVStored(m),0);
+    const rsDiff=rsAll.reduce((s,m)=>s+profitOf(m),0)-rsEvTot; // profitto reale (bonus compresi) − valore atteso
     const rsd=$('rs-stat-diff');rsd.textContent=fmtSigned(rsDiff);rsd.className='big '+(rsDiff>=0?'pos':'neg');
     [rsp,rse,rsd].forEach(autoFitBig);
     // andamento cumulato per giorno: profitto reale contro valore atteso

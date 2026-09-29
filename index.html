@@ -50,6 +50,16 @@
   .btn.mv-purple-ghost{background:rgba(155,138,212,.12);color:var(--purple);border-color:var(--purple)}
   button.rs-check{border:none;cursor:pointer;font-family:inherit}
   button.rs-check:hover{filter:brightness(1.12)}
+  .rsp-book{margin:16px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .rsp-book h4{margin:0;font-size:16px;flex:1 1 auto}
+  .rsp-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .rsp-item .rsp-main{flex:1 1 auto;min-width:0}
+  .rsp-amt{white-space:nowrap;color:var(--amber);font-family:var(--f-mono);font-size:13px;text-align:right}
+  .rsp-ok{color:var(--green)}
+  .rsp-item{flex-wrap:wrap;row-gap:4px}
+  .rsp-item .rsp-main{flex:1 1 100%}
+  .rsp-item .rsp-amt{flex:1 1 auto;text-align:left}
+  .rsp-book .rsp-amt{flex:1 1 100%;text-align:left;order:3}
   .rs-bonus-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(155,138,212,.18);color:var(--purple);border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
   #rs-moves-rows tr.rs-bonus-row td.rsb-empty{display:none}
   .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
@@ -920,10 +930,11 @@
 
       <div id="mv-pane-rimborso" class="mpane hidden">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px">
-          <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti si inseriscono a parte con "+ Bonus". Le promo perse con scadenza passata salgono in cima come "Da controllare": si tolgono da sole quando inserisci un bonus per la stessa ID e lo stesso book, oppure cliccando l'etichetta.</p>
+          <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti si inseriscono con "+ Bonus". "Bonus da ricevere" ti mostra, sito per sito, le promo scadute di cui non hai ancora registrato il bonus.</p>
           <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
             <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
             <button class="btn ghost" id="btnFunRules" data-testid="btn-funrules">Regole bonus Fun</button>
+            <button class="btn mv-purple-ghost" id="btnRsPending" data-testid="btn-rspending">Bonus da ricevere</button>
           </div>
         </div>
         <table>
@@ -1548,7 +1559,7 @@
 <!-- ===== MODAL: rimborso slot step 1 ===== -->
 <div class="overlay hidden" id="modal-rs1">
   <div class="modal">
-    <h3>Rimborso Slot — Passo 1</h3>
+    <h3 id="rs1-title">Rimborso Slot — Passo 1</h3>
     <p class="sub">Parametri della promo, uguali per tutte le ID che la giocano. Al passo 2 scegli quali ID e inserisci i saldi di ognuna.</p>
     <div class="mform">
       <div><label>Data</label><input type="date" id="rs-date" data-testid="rs-date"></div>
@@ -1573,6 +1584,7 @@
     <div class="modal-actions">
       <button class="btn ghost" data-close="modal-rs1">Annulla</button>
       <button class="btn blue" id="rs-next" data-testid="rs-next">Avanti →</button>
+      <button class="btn hidden" id="rs-group-save" data-testid="rs-group-save">Salva modifiche</button>
     </div>
   </div>
 </div>
@@ -1635,20 +1647,31 @@
   </div>
 </div>
 
+<!-- ===== MODAL: bonus da ricevere (promo scadute senza bonus registrato, per sito) ===== -->
+<div class="overlay hidden" id="modal-rspending">
+  <div class="modal" style="max-width:820px">
+    <h3>Bonus da ricevere</h3>
+    <p class="sub">Promo perse con scadenza passata di cui non hai ancora registrato il bonus, sito per sito. Si tolgono da sole quando inserisci con "+ Bonus" un bonus per la stessa ID e lo stesso sito; con ✓ le segni come controllate (es. se il rimborso non è arrivato).</p>
+    <div id="rsp-body" data-testid="rsp-body"></div>
+    <div class="modal-actions"><button class="btn ghost" data-close="modal-rspending">Chiudi</button></div>
+  </div>
+</div>
+
 <!-- ===== MODAL: bonus rimborso (non collegato a una promo) ===== -->
 <div class="overlay hidden" id="modal-rsbonus">
-  <div class="modal" style="max-width:560px">
-    <h3>Bonus</h3>
-    <p class="sub">Un bonus ricevuto (Fun convertito o Real), senza collegarlo a una promo. Va nei Rimborso Slot e somma al profitto.</p>
+  <div class="modal" style="max-width:620px">
+    <h3 id="rb-title">Bonus</h3>
+    <p class="sub" id="rb-sub">Bonus ricevuti (Fun convertito o Real), senza collegarli a una promo. Stessi dati per tutte le ID: scrivi solo l'importo di ognuna. Le ID lasciate vuote non vengono salvate.</p>
     <div class="mform">
       <div><label>Data</label><input type="date" id="rb-date" data-testid="rb-date"></div>
-      <div><label>ID</label><select id="rb-id" data-testid="rb-id"></select></div>
-      <div><label>Book</label><select id="rb-book" data-testid="rb-book"></select></div>
+      <div><label>Sito</label><select id="rb-book" data-testid="rb-book"></select></div>
       <div><label>Tipo</label><select id="rb-kind" data-testid="rb-kind"><option value="fun">Fun convertito</option><option value="real">Real</option></select></div>
-      <div><label>Importo €</label><input class="num" id="rb-amount" data-testid="rb-amount" placeholder="0"></div>
-      <div></div>
       <div class="full"><label>Note</label><input id="rb-notes" data-testid="rb-notes" placeholder="facoltativo"></div>
     </div>
+    <div style="overflow-x:auto;margin-top:6px">
+      <table class="rb-table"><thead><tr><th>ID</th><th class="num">Importo €</th></tr></thead><tbody id="rb-rows" data-testid="rb-rows"></tbody></table>
+    </div>
+    <p class="sub" style="text-align:right;margin:8px 0 0">Totale: <b id="rb-total">€ 0,00</b></p>
     <div class="modal-actions">
       <button class="btn ghost" data-close="modal-rsbonus">Annulla</button>
       <button class="btn" id="rb-save" data-testid="rb-save">Salva</button>
@@ -2215,6 +2238,7 @@
   });
   function renderMoves(){
     rsBIdx=null;
+    const nPend=moves.filter(rsOverdue).length;$('btnRsPending').textContent=nPend?`Bonus da ricevere (${nPend})`:'Bonus da ricevere';
     const gsi=$('rs-global-stake');if(gsi&&document.activeElement!==gsi)gsi.value=String(rsStakeGlobal).replace('.',',');
     const scopedMoves=mvActiveTab==='matched'?moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot')
       :mvActiveTab==='maggiorate'?moves.filter(m=>m.type==='Maggiorate')
@@ -2232,7 +2256,7 @@
     const sortState=mvSort[mvActiveTab];
     if(mvActiveTab==='rimborso'){
       const today=new Date().toISOString().slice(0,10);
-      const needsAttn=rsOverdue;
+      const needsAttn=()=>false;
       const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
       const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
       displayed=[...overdue,...rest];
@@ -2393,7 +2417,7 @@
       const att=rimborsoAttesi(m);
       const evS=rsEVStored(m);
       const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
-      const overdue=rsOverdue(m);
+      const overdue=false; // i bonus in sospeso si vedono in "Bonus da ricevere"
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
         `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <button type="button" class="rs-warn-badge rs-check" data-testid="rs-check" title="Scaduta e rimborso non ancora registrato. Si toglie da solo quando inserisci un bonus per questa ID e questo book; oppure clicca qui per segnarla come controllata">Da controllare</button>':''}</td>`+
@@ -2441,9 +2465,9 @@
       `<td class="num ${p>=0?'pos':'neg'}" data-label="Profitto">${fmt(p)}</td>`+
       `<td class="num" data-label="EV" style="color:var(${ev===null?'--dim':ev>=0?'--green':'--red'})">${ev===null?'–':fmtSigned(ev)}</td>`+
       `<td data-label="Note" class="note-cell" title="${escA(f.notes)}">${esc(f.notes)}</td>`+
-      `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
+      `<td data-label="" style="white-space:nowrap"><button class="iconbtn rs-gedit" data-testid="rs-group-edit" title="Modifica la promo per tutte le ID">✎</button><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
     const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize(g.filter(m=>rimborsoAttesi(m).netto<0));});
-    const ckB=tr.querySelector('.rs-check');if(ckB)ckB.addEventListener('click',e=>{e.stopPropagation();rsMarkChecked(g.filter(rsOverdue));});
+    const geB=tr.querySelector('.rs-gedit');if(geB)geB.addEventListener('click',e=>{e.stopPropagation();openRsGroupEdit(moves.filter(x=>x.type==='Rimborso Slot'&&rsGroupKey(x)===k));});
     tr.addEventListener('click',()=>{open?rsExpanded.delete(k):rsExpanded.add(k);renderMoves();});
     return tr;
   }
@@ -2670,28 +2694,96 @@
     if(!n){alert('Compila almeno una ID.');return;}
     save();renderMoves();$('modal-rs-mon').classList.add('hidden');
   });
-  // ---- "+ Bonus": bonus ricevuto (Fun convertito o Real) salvato da solo, senza collegarlo a una promo ----
+  // ---- "+ Bonus": un'unica impostazione (data, sito, tipo, note) e un importo per ogni ID ----
   let rbEditUid=null;
-  function openRsBonus(u){
+  function openRsBonus(u,preset){
     refreshSelects();rbEditUid=u||null;
     const m=u?moves.find(x=>x.uid===u):null;
-    fillSelect($('rb-id'),ids.map(x=>x.label));fillSelect($('rb-book'),books.length?books:DEFAULT_BOOKS);
+    fillSelect($('rb-book'),books.length?books:DEFAULT_BOOKS);
     $('rb-date').value=m?m.date:isoDate(new Date());
-    if(m){$('rb-id').value=m.pid;$('rb-book').value=m.book;}
+    if(m)$('rb-book').value=m.book;else if(preset&&preset.book)$('rb-book').value=preset.book;
     $('rb-kind').value=m&&m.rsBonusKind==='real'?'real':'fun';
-    $('rb-amount').value=m?String(m.rsBonusMon||'').replace('.',','):'';
     $('rb-notes').value=m?(m.notes||''):'';
-    $('modal-rsbonus').classList.remove('hidden');
+    $('rb-title').textContent=m?'Modifica bonus':(preset&&preset.book?`Bonus ${preset.book}`:'Bonus');
+    const list=m?[m.pid]:ids.map(x=>x.label);
+    const tb=$('rb-rows');tb.innerHTML='';
+    list.forEach(pid=>{
+      const tr=document.createElement('tr');tr.dataset.pid=pid;
+      const hint=preset&&preset.hints&&preset.hints[pid];
+      tr.innerHTML=`<td><b>${esc(pid)}</b>${hint?`<div class="note" style="margin:2px 0 0;font-size:12px">${esc(hint)}</div>`:''}</td>`+
+        `<td class="num"><input class="num rb-amt" data-testid="rb-amt" value="${m?String(m.rsBonusMon||'').replace('.',','):''}" placeholder="—" style="max-width:140px"></td>`;
+      tb.appendChild(tr);
+    });
+    rbUpdate();$('modal-rsbonus').classList.remove('hidden');
   }
+  function rbUpdate(){let t=0;$('rb-rows').querySelectorAll('.rb-amt').forEach(i=>{const v=numParse(i.value);if(!isNaN(v))t+=v;});$('rb-total').textContent=fmt(t);}
+  $('rb-rows').addEventListener('input',rbUpdate);
   $('btnRsBonus').addEventListener('click',()=>{if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}openRsBonus();});
   $('rb-save').addEventListener('click',()=>{
-    const v=numParse(val('rb-amount'));if(isNaN(v)){alert("Inserisci l'importo del bonus.");return;}
     if(!val('rb-date')){alert('Imposta la data.');return;}
-    const rec={date:val('rb-date'),pid:val('rb-id'),book:val('rb-book'),type:'Rimborso Slot',game:'Slot',rsKind:'bonus',rsBonusKind:val('rb-kind'),
-      start:'0',end:'0',rsBonusMon:String(Math.round(v*100)/100),rsEV:'',notes:val('rb-notes')};
-    if(rbEditUid){const i=moves.findIndex(x=>x.uid===rbEditUid);if(i>=0)moves[i]={...moves[i],...rec};}
-    else moves.unshift({uid:uid(),...rec});
+    const common={date:val('rb-date'),book:val('rb-book'),type:'Rimborso Slot',game:'Slot',rsKind:'bonus',rsBonusKind:val('rb-kind'),start:'0',end:'0',rsEV:'',notes:val('rb-notes')};
+    const rows=[...$('rb-rows').children].map(tr=>({pid:tr.dataset.pid,v:numParse(tr.querySelector('.rb-amt').value)})).filter(r=>!isNaN(r.v));
+    if(!rows.length){alert("Scrivi l'importo di almeno una ID.");return;}
+    const r2=v=>String(Math.round(v*100)/100);
+    if(rbEditUid){const i=moves.findIndex(x=>x.uid===rbEditUid);if(i>=0)moves[i]={...moves[i],...common,pid:rows[0].pid,rsBonusMon:r2(rows[0].v)};}
+    else{const g=uid();rows.forEach(r=>moves.unshift({uid:uid(),...common,rsBonusGroup:g,pid:r.pid,rsBonusMon:r2(r.v)}));}
     save();renderMoves();$('modal-rsbonus').classList.add('hidden');
+    if(!$('modal-rspending').classList.contains('hidden'))renderRsPending();
+  });
+  // ---- "Bonus da ricevere": promo perse e scadute senza bonus registrato, raggruppate per sito ----
+  function renderRsPending(){
+    rsBIdx=null;
+    const list=moves.filter(rsOverdue);
+    const body=$('rsp-body');
+    if(!list.length){body.innerHTML='<p class="note" style="margin:14px 0">Nessun bonus in sospeso: per le promo scadute hai già registrato tutto.</p>';return;}
+    const byBook=new Map();list.forEach(m=>{if(!byBook.has(m.book))byBook.set(m.book,[]);byBook.get(m.book).push(m);});
+    const tot=g=>g.reduce((s,m)=>{const a=rimborsoAttesi(m);s.r+=a.realAtteso;s.f+=a.funAtteso;return s;},{r:0,f:0});
+    const books=[...byBook.entries()].sort((a,b)=>{const ta=tot(a[1]),tb=tot(b[1]);return (tb.r+tb.f)-(ta.r+ta.f);});
+    body.innerHTML='';
+    books.forEach(([book,g])=>{
+      const t=tot(g);
+      const sec=document.createElement('div');
+      sec.innerHTML=`<div class="rsp-book"><h4>${esc(book)} <span class="note" style="margin:0;font-weight:400">· ${g.length} promo</span></h4>`+
+        `<span class="rsp-amt">${t.r?'Real '+fmt(t.r):''}${t.r&&t.f?' · ':''}${t.f?'Fun '+fmt(t.f):''}</span>`+
+        `<button class="btn ghost rsp-add" data-testid="rsp-add" style="padding:5px 12px;font-size:12.5px">+ Bonus ${esc(book)}</button></div>`;
+      [...g].sort((a,b)=>(a.scadenza||'').localeCompare(b.scadenza||'')||(a.pid||'').localeCompare(b.pid||'')).forEach(m=>{
+        const a=rimborsoAttesi(m);
+        const it=document.createElement('div');it.className='rsp-item';
+        it.innerHTML=`<div class="rsp-main"><b>${esc(m.pid)}</b> <span class="note" style="margin:0">${esc(fmtDateIt(m.date))}${m.notes?' · '+esc(m.notes):''} · scaduta il ${esc(fmtDateIt(m.scadenza))}</span></div>`+
+          `<span class="rsp-amt">${a.realAtteso?'Real '+fmt(a.realAtteso):''}${a.realAtteso&&a.funAtteso?' · ':''}${a.funAtteso?'Fun '+fmt(a.funAtteso):''}</span>`+
+          `<button class="iconbtn rsp-ok" data-testid="rsp-ok" title="Segna come controllata (il bonus non arriverà)">✓</button>`;
+        it.querySelector('.rsp-ok').addEventListener('click',()=>{const i=moves.findIndex(y=>y.uid===m.uid);if(i>=0)moves[i]={...moves[i],rsChecked:true};save();renderMoves();renderRsPending();});
+        sec.appendChild(it);
+      });
+      sec.querySelector('.rsp-add').addEventListener('click',()=>{
+        const hints={};g.forEach(m=>{const a=rimborsoAttesi(m);const h=hints[m.pid]||{r:0,f:0};h.r+=a.realAtteso;h.f+=a.funAtteso;hints[m.pid]=h;});
+        Object.keys(hints).forEach(p=>{const h=hints[p];hints[p]='atteso '+[h.r?'Real '+fmt(h.r):'',h.f?'Fun '+fmt(h.f):''].filter(Boolean).join(' · ');});
+        openRsBonus(null,{book,hints});
+      });
+      body.appendChild(sec);
+    });
+  }
+  $('btnRsPending').addEventListener('click',()=>{renderRsPending();$('modal-rspending').classList.remove('hidden');});
+  // ---- modifica di una promo raggruppata: parametri comuni a tutte le ID, i saldi di ognuna restano ----
+  let rsGroupEditUids=null;
+  function openRsGroupEdit(all){
+    const f=all[0];rsGroupEditUids=all.map(m=>m.uid);
+    refreshSelects();fillSelect($('rs-book'),books.length?books:DEFAULT_BOOKS);
+    $('rs-date').value=f.date||'';$('rs-book').value=f.book||'';$('rs-scadenza').value=f.scadenza||'';
+    $('rs-realpct').value=f.rsRealPct??'';$('rs-realmax').value=f.rsRealMax??'';$('rs-funpct').value=f.rsFunPct??'';$('rs-funmax').value=f.rsFunMax??'';
+    const evs=[...new Set(all.map(m=>m.rsEV??''))];$('rs-ev').value=evs.length===1?evs[0]:'';
+    $('rs-notes').value=f.notes||'';
+    $('rs1-title').textContent=`Modifica promo — ${all.length} ID (${[...new Set(all.map(m=>m.pid))].join(', ')})`;
+    $('rs-next').classList.add('hidden');$('rs-group-save').classList.remove('hidden');
+    computeStakeMax('rs');$('modal-rs1').classList.remove('hidden');
+  }
+  $('rs-group-save').addEventListener('click',()=>{
+    if(!rsGroupEditUids)return;
+    const gid=(moves.find(m=>m.uid===rsGroupEditUids[0])||{}).rsGroup||uid();
+    const upd={date:val('rs-date'),book:val('rs-book'),scadenza:val('rs-scadenza'),rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax'),notes:val('rs-notes'),rsGroup:gid};
+    const ev=val('rs-ev');
+    rsGroupEditUids.forEach(u=>{const i=moves.findIndex(x=>x.uid===u);if(i>=0)moves[i]={...moves[i],...upd,...(ev!==''?{rsEV:ev}:{})};});
+    rsGroupEditUids=null;save();renderMoves();$('modal-rs1').classList.add('hidden');
   });
   // ---- regole bonus Fun: finestra di modifica ----
   function frAddRow(book,rollover,cap){
@@ -2727,6 +2819,7 @@
     renderMoves();
   });
   $('btnRimborso').addEventListener('click',()=>{
+    rsGroupEditUids=null;$('rs1-title').textContent='Rimborso Slot — Passo 1';$('rs-next').classList.remove('hidden');$('rs-group-save').classList.add('hidden');
     if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}
     fillSelect($('rs-book'),books.length?books:DEFAULT_BOOKS);
     $('rs-date').value=new Date().toISOString().slice(0,10);

@@ -48,6 +48,8 @@
   .btn.mv-green{background:var(--green);border-color:var(--green);color:#06140f}
   .btn.mv-green-ghost{background:rgba(69,179,147,.12);color:var(--green);border-color:var(--green)}
   .btn.mv-purple-ghost{background:rgba(155,138,212,.12);color:var(--purple);border-color:var(--purple)}
+  button.rs-check{border:none;cursor:pointer;font-family:inherit}
+  button.rs-check:hover{filter:brightness(1.12)}
   .rs-bonus-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(155,138,212,.18);color:var(--purple);border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
   #rs-moves-rows tr.rs-bonus-row td.rsb-empty{display:none}
   .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
@@ -918,7 +920,7 @@
 
       <div id="mv-pane-rimborso" class="mpane hidden">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px">
-          <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti (Fun convertito o Real) si inseriscono a parte con "+ Bonus": sommano al profitto senza essere collegati a una promo.</p>
+          <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti si inseriscono a parte con "+ Bonus". Le promo perse con scadenza passata salgono in cima come "Da controllare": si tolgono da sole quando inserisci un bonus per la stessa ID e lo stesso book, oppure cliccando l'etichetta.</p>
           <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
             <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
             <button class="btn ghost" id="btnFunRules" data-testid="btn-funrules">Regole bonus Fun</button>
@@ -1031,8 +1033,8 @@
         <div class="grid6" style="margin-bottom:0">
           <div class="mgmini"><div class="lbl">Profitto</div><div class="big" id="rs-stat-profit" data-testid="rs-stat-profit">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Totale promo</div><div class="big" id="rs-stat-count" data-testid="rs-stat-count">0</div></div>
-          <div class="mgmini"><div class="lbl">Bonus inseriti</div><div class="big" id="rs-stat-real" data-testid="rs-stat-real">€ 0,00</div></div>
-          <div class="mgmini"><div class="lbl">Rimborsi attesi</div><div class="big" id="rs-stat-fun" data-testid="rs-stat-fun">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Real da ricevere</div><div class="big" id="rs-stat-real" data-testid="rs-stat-real">€ 0,00</div></div>
+          <div class="mgmini"><div class="lbl">Fun da ricevere</div><div class="big" id="rs-stat-fun" data-testid="rs-stat-fun">€ 0,00</div></div>
           <div class="mgmini"><div class="lbl">Valore atteso</div><div class="big" id="rs-stat-ev" data-testid="rs-stat-ev">€ 0,00</div></div>
           <div class="mgmini" title="Profitto reale (bonus compresi) meno valore atteso"><div class="lbl">Scarto vs atteso</div><div class="big" id="rs-stat-diff" data-testid="rs-stat-diff">€ 0,00</div></div>
         </div>
@@ -2212,6 +2214,7 @@
     save();renderMoves();renderDraftsBadge();$('modal-maggiorate').classList.add('hidden');
   });
   function renderMoves(){
+    rsBIdx=null;
     const gsi=$('rs-global-stake');if(gsi&&document.activeElement!==gsi)gsi.value=String(rsStakeGlobal).replace('.',',');
     const scopedMoves=mvActiveTab==='matched'?moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot')
       :mvActiveTab==='maggiorate'?moves.filter(m=>m.type==='Maggiorate')
@@ -2229,7 +2232,7 @@
     const sortState=mvSort[mvActiveTab];
     if(mvActiveTab==='rimborso'){
       const today=new Date().toISOString().slice(0,10);
-      const needsAttn=()=>false; // promemoria tolto: il bonus non si monetizza più sulla promo
+      const needsAttn=rsOverdue;
       const overdue=mvApplySort(displayed.filter(needsAttn),sortState.col,sortState.dir);
       const rest=mvApplySort(displayed.filter(m=>!needsAttn(m)),sortState.col,sortState.dir);
       displayed=[...overdue,...rest];
@@ -2349,6 +2352,24 @@
   }
 
   // una riga per ID (usata da sola, o dentro un gruppo aperto)
+  // ---- promo perse "da controllare" ----
+  // Una promo persa è risolta quando: ha già il Bonus Monetizzato (storico), l'hai segnata come controllata,
+  // oppure hai inserito con "+ Bonus" un bonus per la stessa ID e lo stesso book in data uguale o successiva.
+  let rsBIdx=null;
+  function rsResolved(m){
+    if(!(m.rsBonusMon===undefined||m.rsBonusMon===''))return true;
+    if(m.rsChecked)return true;
+    if(!rsBIdx){rsBIdx=new Map();moves.forEach(b=>{if(b.rsKind!=='bonus')return;const k=b.pid+'|'+b.book;if(!rsBIdx.has(k)||(b.date||'')>rsBIdx.get(k))rsBIdx.set(k,b.date||'');});}
+    const last=rsBIdx.get(m.pid+'|'+m.book);
+    return last!==undefined&&last>=(m.date||'');
+  }
+  const rsPendingPromo=m=>m.type==='Rimborso Slot'&&m.rsKind!=='bonus'&&rimborsoAttesi(m).netto<0&&!rsResolved(m);
+  const rsOverdue=m=>rsPendingPromo(m)&&!!m.scadenza&&m.scadenza<isoDate(new Date());
+  function rsMarkChecked(list){
+    if(!confirm(list.length>1?`Segnare come controllate le ${list.length} ID di questa promo?`:'Segnare questa promo come controllata?'))return;
+    list.forEach(x=>{const i=moves.findIndex(y=>y.uid===x.uid);if(i>=0)moves[i]={...moves[i],rsChecked:true};});
+    save();renderMoves();
+  }
   // riga di un bonus inserito con "+ Bonus": nessuna promo, conta solo l'importo
   function rsBonusRow(m,child){
     const v=numParse(m.rsBonusMon)||0;
@@ -2372,10 +2393,10 @@
       const att=rimborsoAttesi(m);
       const evS=rsEVStored(m);
       const bmSet=!(m.rsBonusMon===undefined||m.rsBonusMon==='');
-      const overdue=false; // niente promemoria: i bonus si inseriscono a parte con "+ Bonus"
+      const overdue=rsOverdue(m);
       const tr=document.createElement('tr');tr.className='clickable'+(overdue?' rs-overdue-row':'');
       tr.innerHTML=`<td data-label="Data">${esc(m.date)}</td><td data-label="ID">${esc(m.pid)}</td><td data-label="Book">${esc(m.book)}</td>`+
-        `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Scaduta, manca ancora il Bonus Monetizzato">Da controllare</span>':''}</td>`+
+        `<td data-label="Scadenza">${m.scadenza?esc(m.scadenza):'–'}${overdue?' <button type="button" class="rs-warn-badge rs-check" data-testid="rs-check" title="Scaduta e rimborso non ancora registrato. Si toglie da solo quando inserisci un bonus per questa ID e questo book; oppure clicca qui per segnarla come controllata">Da controllare</button>':''}</td>`+
         `<td class="num" data-label="Saldo iniziale">${fmt(numParse(m.start)||0)}</td>`+
         `<td class="num" data-label="Saldo finale">${fmt(numParse(m.end)||0)}</td>`+
         `<td class="num ${att.netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(att.netto)}</td>`+
@@ -2389,6 +2410,7 @@
       tr.querySelector('[data-del]').addEventListener('click',e=>{e.stopPropagation();if(confirm('Eliminare questo movimento?')){moves=moves.filter(x=>x.uid!==m.uid);save();renderMoves();}});
       tr.querySelector('[data-edit]').addEventListener('click',e=>{e.stopPropagation();openRimborso(m.uid);});
       tr.addEventListener('click',()=>openRimborso(m.uid));
+      const ckB=tr.querySelector('.rs-check');if(ckB)ckB.addEventListener('click',e=>{e.stopPropagation();rsMarkChecked([m]);});
       const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize([m]);});
       if(child)tr.classList.add('rs-child');
       return tr;
@@ -2409,7 +2431,7 @@
     const pids=[...new Set(g.map(m=>m.pid))].join(', ');
     const tr=document.createElement('tr');tr.className='clickable rs-group'+(overdue?' rs-overdue-row':'')+(open?' rs-open':'');
     tr.innerHTML=`<td data-label="Data">${esc(f.date)}</td><td data-label="ID"><b>${g.length} ID</b> <span class="note grp-ids" style="margin:0" title="${escA(pids)}">${esc(pids)}</span></td><td data-label="Book">${esc(f.book)}</td>`+
-      `<td data-label="Scadenza">${f.scadenza?esc(f.scadenza):'–'}${overdue?' <span class="rs-warn-badge" title="Almeno una ID ha la scadenza passata senza Bonus Monetizzato">Da controllare</span>':''}</td>`+
+      `<td data-label="Scadenza">${f.scadenza?esc(f.scadenza):'–'}${overdue?' <button type="button" class="rs-warn-badge rs-check" data-testid="rs-check" title="Almeno una ID è scaduta con il rimborso non ancora registrato. Clicca per segnarle come controllate">Da controllare</button>':''}</td>`+
       `<td class="num" data-label="Saldo iniziale">${fmt(sum(m=>numParse(m.start)||0))}</td>`+
       `<td class="num" data-label="Saldo finale">${fmt(sum(m=>numParse(m.end)||0))}</td>`+
       `<td class="num ${netto>=0?'pos':'neg'}" data-label="Netto Qual.">${fmt(netto)}</td>`+
@@ -2421,6 +2443,7 @@
       `<td data-label="Note" class="note-cell" title="${escA(f.notes)}">${esc(f.notes)}</td>`+
       `<td data-label="" style="white-space:nowrap"><button class="iconbtn" data-testid="rs-group-toggle" title="${open?'Nascondi':'Mostra'} le singole ID">${open?'▾':'▸'}</button></td>`;
     const monB=tr.querySelector('.rs-mon-btn');if(monB)monB.addEventListener('click',e=>{e.stopPropagation();openRsMonetize(g.filter(m=>rimborsoAttesi(m).netto<0));});
+    const ckB=tr.querySelector('.rs-check');if(ckB)ckB.addEventListener('click',e=>{e.stopPropagation();rsMarkChecked(g.filter(rsOverdue));});
     tr.addEventListener('click',()=>{open?rsExpanded.delete(k):rsExpanded.add(k);renderMoves();});
     return tr;
   }
@@ -3850,6 +3873,7 @@
   $('share-dl').addEventListener('click',()=>{if(!shareBlob)return;const a=document.createElement('a');a.href=URL.createObjectURL(shareBlob);a.download=shareName();document.body.appendChild(a);a.click();a.remove();});
   $('share-go').addEventListener('click',async()=>{if(!shareBlob)return;try{await navigator.share({files:[new File([shareBlob],shareName(),{type:'image/jpeg'})],title:'Risultati'});}catch(e){}});
   function renderSummary(){
+    rsBIdx=null;
     // le 4 card in alto seguono il periodo scelto (salvato); tabelle e grafici sotto restano su tutto
     const rPer=localStorage.getItem('tk_sum_period')||'';if($('r-preset').value!==rPer)$('r-preset').value=rPer;
     const rRange=presetRange(rPer),inPer=m=>!rRange||((m.date||'')>=rRange.from&&(m.date||'')<=rRange.to);
@@ -3969,11 +3993,10 @@
     const rsProfit=rsAll.reduce((s,m)=>s+profitOf(m),0);
     const rsp=$('rs-stat-profit');rsp.textContent=fmt(rsProfit);rsp.className='big '+(rsProfit>=0?'pos':'neg');
     $('rs-stat-count').textContent=rsAll.filter(m=>m.rsKind!=='bonus').length;
-    // bonus inseriti con "+ Bonus" e rimborsi che ti spettavano sulle promo (Real + Fun atteso): confrontandoli vedi la resa
-    const rsBonusTot=rsAll.reduce((s,m)=>s+(numParse(m.rsBonusMon)||0),0); // bonus con "+ Bonus" e quelli già registrati dentro le promo
-    const rsAttesi=rsAll.filter(m=>m.rsKind!=='bonus').reduce((s,m)=>{const a=rimborsoAttesi(m);return s+a.realAtteso+a.funAtteso;},0);
-    $('rs-stat-real').textContent=fmt(rsBonusTot);
-    $('rs-stat-fun').textContent=fmt(rsAttesi);
+    // Real e Fun attesi delle promo perse non ancora risolte (niente bonus registrato né segnate come controllate)
+    const rsPending=rsAll.filter(rsPendingPromo);
+    $('rs-stat-real').textContent=fmt(rsPending.reduce((s,m)=>s+rimborsoAttesi(m).realAtteso,0));
+    $('rs-stat-fun').textContent=fmt(rsPending.reduce((s,m)=>s+rimborsoAttesi(m).funAtteso,0));
     const rsEvTot=rsAll.reduce((s,m)=>s+(rsEVStored(m)||0),0);
     const rse=$('rs-stat-ev');rse.textContent=fmtSigned(rsEvTot);rse.className='big '+(rsEvTot>=0?'pos':'neg');
     // scarto solo sulle promo chiuse (vinte, oppure perse con Bonus Monetizzato già inserito)

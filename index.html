@@ -76,6 +76,15 @@
   #rs-rows .tpsl{display:flex;align-items:stretch}
   #rs-rows td:nth-child(4){align-self:center}
   #rs-rows td:nth-child(6){align-self:end;text-align:right!important}
+  /* "+ Bonus" sul telefono: una scheda per ID con i tre saldi affiancati */
+  .rb-table thead{display:none}
+  .rb-table tr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 8px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .rb-table td{border:none!important;padding:0!important;text-align:left!important}
+  .rb-table td:first-child{grid-column:1/-1;font-size:15px}
+  .rb-table td.rb-res{grid-column:1/-1;text-align:right!important;font-weight:700}
+  .rb-table td[data-l]::before{content:attr(data-l);display:block;font-size:10.5px;color:var(--dim);margin-bottom:3px;font-weight:600}
+  .rb-table td.rb-res::before{display:inline;margin-right:8px}
+  .rb-table input{width:100%;max-width:none;padding:8px 8px}
   .rs-bonus-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(155,138,212,.18);color:var(--purple);border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
   #rs-moves-rows tr.rs-bonus-row td.rsb-empty{display:none}
   .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
@@ -1677,9 +1686,9 @@
 
 <!-- ===== MODAL: bonus rimborso (non collegato a una promo) ===== -->
 <div class="overlay hidden" id="modal-rsbonus">
-  <div class="modal" style="max-width:620px">
+  <div class="modal" style="max-width:760px">
     <h3 id="rb-title">Bonus</h3>
-    <p class="sub" id="rb-sub">Bonus ricevuti (Fun convertito o Real), senza collegarli a una promo. Stessi dati per tutte le ID: scrivi solo l'importo di ognuna. Le ID lasciate vuote non vengono salvate.</p>
+    <p class="sub" id="rb-sub">Bonus ricevuti (Fun convertito o Real), senza collegarli a una promo. Stessi dati per tutte le ID; per ognuna saldo iniziale, di cui bonus e saldo finale: bonus = finale − iniziale + di cui bonus. Le ID senza saldi non vengono salvate.</p>
     <div class="mform">
       <div><label>Data</label><input type="date" id="rb-date" data-testid="rb-date"></div>
       <div><label>Sito</label><select id="rb-book" data-testid="rb-book"></select></div>
@@ -1687,7 +1696,7 @@
       <div class="full"><label>Note</label><input id="rb-notes" data-testid="rb-notes" placeholder="facoltativo"></div>
     </div>
     <div style="overflow-x:auto;margin-top:6px">
-      <table class="rb-table"><thead><tr><th>ID</th><th class="num">Importo €</th></tr></thead><tbody id="rb-rows" data-testid="rb-rows"></tbody></table>
+      <table class="rb-table"><thead><tr><th>ID</th><th class="num">Saldo iniziale</th><th class="num">di cui bonus</th><th class="num">Saldo finale</th><th class="num">Bonus</th></tr></thead><tbody id="rb-rows" data-testid="rb-rows"></tbody></table>
     </div>
     <p class="sub" style="text-align:right;margin:8px 0 0">Totale: <b id="rb-total">€ 0,00</b></p>
     <div class="modal-actions">
@@ -2729,7 +2738,9 @@
     if(!n){alert('Compila almeno una ID.');return;}
     save();renderMoves();$('modal-rs-mon').classList.add('hidden');
   });
-  // ---- "+ Bonus": un'unica impostazione (data, sito, tipo, note) e un importo per ogni ID ----
+  // ---- "+ Bonus": un'unica impostazione (data, sito, tipo, note) e per ogni ID saldo iniziale, di cui bonus, saldo finale ----
+  // bonus = saldo finale − saldo iniziale + di cui bonus. Lo schema resta in rbMon; start/end del movimento restano 0
+  // così il profitto conta solo il bonus calcolato.
   let rbEditUid=null;
   function openRsBonus(u,preset){
     refreshSelects();rbEditUid=u||null;
@@ -2741,27 +2752,45 @@
     $('rb-notes').value=m?(m.notes||''):'';
     $('rb-title').textContent=m?'Modifica bonus':(preset&&preset.book?`Bonus ${preset.book}`:'Bonus');
     const list=m?[m.pid]:ids.map(x=>x.label);
+    const v=x=>x===undefined||x===null?'':String(x).replace('.',',');
+    const r2=n=>Math.round(n*100)/100;
     const tb=$('rb-rows');tb.innerHTML='';
     list.forEach(pid=>{
       const tr=document.createElement('tr');tr.dataset.pid=pid;
-      const hint=preset&&preset.hints&&preset.hints[pid];
+      const h=preset&&preset.hints&&preset.hints[pid];
+      const hint=h?'atteso '+[h.r?'Real '+fmt(h.r):'',h.f?'Fun '+fmt(h.f):''].filter(Boolean).join(' · '):'';
+      // valori: schema salvato; bonus inseriti prima dello schema → iniziale 0, finale = importo (stesso totale)
+      let mon=m?(m.rbMon||{start:'0',bonus:'0',end:String(m.rsBonusMon||'')}):{};
+      const bonusDef=mon.bonus!==undefined?mon.bonus:(h?r2(h.r+h.f):'');
+      const inp=(cls,lbl,val,ph)=>`<td class="num" data-l="${lbl}"><input class="num ${cls}" data-testid="${cls}" value="${v(val)}" placeholder="${ph}"></td>`;
       tr.innerHTML=`<td><b>${esc(pid)}</b>${hint?`<div class="note" style="margin:2px 0 0;font-size:12px">${esc(hint)}</div>`:''}</td>`+
-        `<td class="num"><input class="num rb-amt" data-testid="rb-amt" value="${m?String(m.rsBonusMon||'').replace('.',','):''}" placeholder="—" style="max-width:140px"></td>`;
+        inp('rb-start','Saldo iniziale',mon.start,'0')+inp('rb-bonus','di cui bonus',bonusDef,'0')+inp('rb-end','Saldo finale',mon.end,'0')+
+        `<td class="num rb-res" data-l="Bonus">–</td>`;
       tb.appendChild(tr);
     });
     rbUpdate();$('modal-rsbonus').classList.remove('hidden');
   }
-  function rbUpdate(){let t=0;$('rb-rows').querySelectorAll('.rb-amt').forEach(i=>{const v=numParse(i.value);if(!isNaN(v))t+=v;});$('rb-total').textContent=fmt(t);}
+  function rbCalc(tr){
+    const g=c=>tr.querySelector(c).value.trim();
+    if(g('.rb-start')===''||g('.rb-end')==='')return null;
+    return (numParse(g('.rb-end'))||0)-(numParse(g('.rb-start'))||0)+(numParse(g('.rb-bonus'))||0);
+  }
+  function rbUpdate(){
+    let t=0;
+    [...$('rb-rows').children].forEach(tr=>{const r=rbCalc(tr),c=tr.querySelector('.rb-res');
+      if(r===null){c.textContent='–';c.style.color='var(--dim)';}else{t+=r;c.textContent=fmt(r);c.style.color=r>=0?'var(--green)':'var(--red)';}});
+    $('rb-total').textContent=fmt(t);
+  }
   $('rb-rows').addEventListener('input',rbUpdate);
   $('btnRsBonus').addEventListener('click',()=>{if(!ids.length){alert('Aggiungi prima delle ID nella pagina Setup.');return;}openRsBonus();});
   $('rb-save').addEventListener('click',()=>{
     if(!val('rb-date')){alert('Imposta la data.');return;}
     const common={date:val('rb-date'),book:val('rb-book'),type:'Rimborso Slot',game:'Slot',rsKind:'bonus',rsBonusKind:val('rb-kind'),start:'0',end:'0',rsEV:'',notes:val('rb-notes')};
-    const rows=[...$('rb-rows').children].map(tr=>({pid:tr.dataset.pid,v:numParse(tr.querySelector('.rb-amt').value)})).filter(r=>!isNaN(r.v));
-    if(!rows.length){alert("Scrivi l'importo di almeno una ID.");return;}
+    const rows=[...$('rb-rows').children].map(tr=>({pid:tr.dataset.pid,v:rbCalc(tr),mon:{start:tr.querySelector('.rb-start').value.trim(),bonus:tr.querySelector('.rb-bonus').value.trim(),end:tr.querySelector('.rb-end').value.trim()}})).filter(r=>r.v!==null);
+    if(!rows.length){alert('Scrivi saldo iniziale e saldo finale di almeno una ID.');return;}
     const r2=v=>String(Math.round(v*100)/100);
-    if(rbEditUid){const i=moves.findIndex(x=>x.uid===rbEditUid);if(i>=0)moves[i]={...moves[i],...common,pid:rows[0].pid,rsBonusMon:r2(rows[0].v)};}
-    else{const g=uid();rows.forEach(r=>moves.unshift({uid:uid(),...common,rsBonusGroup:g,pid:r.pid,rsBonusMon:r2(r.v)}));}
+    if(rbEditUid){const i=moves.findIndex(x=>x.uid===rbEditUid);if(i>=0)moves[i]={...moves[i],...common,pid:rows[0].pid,rsBonusMon:r2(rows[0].v),rbMon:rows[0].mon};}
+    else{const g=uid();rows.forEach(r=>moves.unshift({uid:uid(),...common,rsBonusGroup:g,pid:r.pid,rsBonusMon:r2(r.v),rbMon:r.mon}));}
     save();renderMoves();$('modal-rsbonus').classList.add('hidden');
     if(!$('modal-rspending').classList.contains('hidden'))renderRsPending();
   });
@@ -2792,7 +2821,6 @@
       });
       sec.querySelector('.rsp-add').addEventListener('click',()=>{
         const hints={};g.forEach(m=>{const a=rimborsoAttesi(m);const h=hints[m.pid]||{r:0,f:0};h.r+=a.realAtteso;h.f+=a.funAtteso;hints[m.pid]=h;});
-        Object.keys(hints).forEach(p=>{const h=hints[p];hints[p]='atteso '+[h.r?'Real '+fmt(h.r):'',h.f?'Fun '+fmt(h.f):''].filter(Boolean).join(' · ');});
         openRsBonus(null,{book,hints});
       });
       body.appendChild(sec);

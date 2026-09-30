@@ -60,6 +60,22 @@
   .rsp-item .rsp-main{flex:1 1 100%}
   .rsp-item .rsp-amt{flex:1 1 auto;text-align:left}
   .rsp-book .rsp-amt{flex:1 1 100%;text-align:left;order:3}
+  .tpsl{display:inline-flex;flex-direction:column;align-items:flex-end;gap:2px}
+  .tpsl-tp,.tpsl-sl{font-size:11px;font-family:var(--f-mono);line-height:1.15;min-height:13px;white-space:nowrap}
+  .tpsl-tp{color:var(--green)}
+  .tpsl-sl{color:var(--red)}
+  /* Passo 2 Rimborso Slot sul telefono: una scheda per ID invece della tabella larga */
+  #modal-rs2 thead{display:none}
+  #rs-rows tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:12px 0;border-bottom:1px solid var(--line)}
+  #rs-rows td{padding:0!important;border:none!important;text-align:left!important}
+  #rs-rows select,#rs-rows input{width:100%;max-width:none!important;min-width:0!important}
+  #rs-rows td:nth-child(3)::before,#rs-rows td:nth-child(4)::before,#rs-rows td:nth-child(5)::before{display:block;font-size:10.5px;color:var(--dim);font-weight:600;margin-bottom:3px}
+  #rs-rows td:nth-child(3)::before{content:'Saldo iniziale'}
+  #rs-rows td:nth-child(4)::before{content:'Saldo finale'}
+  #rs-rows td:nth-child(5)::before{content:'Bonus (se già noto)'}
+  #rs-rows .tpsl{display:flex;align-items:stretch}
+  #rs-rows td:nth-child(4){align-self:center}
+  #rs-rows td:nth-child(6){align-self:end;text-align:right!important}
   .rs-bonus-badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;background:rgba(155,138,212,.18);color:var(--purple);border-radius:999px;padding:2px 7px;margin-left:4px;white-space:nowrap}
   #rs-moves-rows tr.rs-bonus-row td.rsb-empty{display:none}
   .btn.mv-purple{background:var(--purple);border-color:var(--purple);color:#150f24}
@@ -933,6 +949,7 @@
           <p class="sub" style="margin:0;flex:1 1 260px">I bonus ricevuti si inseriscono con "+ Bonus". "Bonus da ricevere" ti mostra, sito per sito, le promo scadute di cui non hai ancora registrato il bonus.</p>
           <div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
             <div class="field" style="max-width:190px;margin-bottom:0"><label>Il mio stake rimborso €</label><input class="num" id="rs-global-stake" data-testid="rs-global-stake" placeholder="100"></div>
+            <div class="field" style="max-width:130px;margin-bottom:0"><label>Take profit %</label><input class="num" id="rs-global-tp" data-testid="rs-global-tp" placeholder="20"></div>
             <button class="btn ghost" id="btnFunRules" data-testid="btn-funrules">Regole bonus Fun</button>
             <button class="btn mv-purple-ghost" id="btnRsPending" data-testid="btn-rspending">Bonus da ricevere</button>
           </div>
@@ -1594,6 +1611,7 @@
   <div class="modal" style="max-width:900px">
     <h3>Rimborso Slot — Passo 2</h3>
     <p class="sub" id="rs-summary"></p>
+    <p class="sub" id="rs-tpsl-info" data-testid="rs-tpsl-info" style="margin:0 0 8px;color:var(--txt)"></p>
     <p class="sub hidden" id="rs-empty" style="color:var(--amber)">Nessuna ID ha questo book associato in anagrafica. Usa "+ Aggiungi riga" per inserirne una manualmente.</p>
     <div style="overflow-x:auto;max-height:52vh;overflow-y:auto">
       <table>
@@ -1900,6 +1918,7 @@
       localStorage.setItem('tk_cash_actual',JSON.stringify(cashActual));
       localStorage.setItem('tk_cash_actual_ts',JSON.stringify(cashActualTs));
       if(numParse(externalData.rsStake)>0)setRsStakeGlobal(externalData.rsStake,true);
+      if(numParse(externalData.rsTp)>0)setRsTpGlobal(externalData.rsTp,true);
       if(externalData.rsFunRules&&typeof externalData.rsFunRules==='object')setRsFunRules(externalData.rsFunRules,true);
       if(Array.isArray(externalData.promos))localStorage.setItem('tk_promo',JSON.stringify(externalData.promos));
     } else {
@@ -2036,6 +2055,8 @@
   // stake di gioco unico ("Il mio stake rimborso"): ogni promo usa il più basso tra questo e il
   // proprio limite (lo stake oltre il quale nessuno dei due rimborsi cresce più). Sincronizzato su Sheets.
   let rsStakeGlobal=numParse(localStorage.getItem('tk_rs_stake'))||100;
+  let rsTpGlobal=numParse(localStorage.getItem('tk_rs_tp'))||20; // take profit % della sessione di gioco
+  function setRsTpGlobal(v,noSync){v=numParse(v);if(!(v>0))return false;rsTpGlobal=v;localStorage.setItem('tk_rs_tp',String(v));if(!noSync)gsScheduleSync();return true;}
   function setRsStakeGlobal(v,noSync){
     v=numParse(v);if(!(v>0))return false;
     rsStakeGlobal=v;localStorage.setItem('tk_rs_stake',String(v));
@@ -2240,6 +2261,7 @@
     rsBIdx=null;
     const nPend=moves.filter(rsOverdue).length;$('btnRsPending').textContent=nPend?`Bonus da ricevere (${nPend})`:'Bonus da ricevere';
     const gsi=$('rs-global-stake');if(gsi&&document.activeElement!==gsi)gsi.value=String(rsStakeGlobal).replace('.',',');
+    const gti=$('rs-global-tp');if(gti&&document.activeElement!==gti)gti.value=String(rsTpGlobal).replace('.',',');
     const scopedMoves=mvActiveTab==='matched'?moves.filter(m=>m.type!=='Maggiorate'&&m.type!=='Rimborso Slot')
       :mvActiveTab==='maggiorate'?moves.filter(m=>m.type==='Maggiorate')
       :moves.filter(m=>m.type==='Rimborso Slot');
@@ -2614,13 +2636,25 @@
     const tr=document.createElement('tr');tr.dataset.k=k;
     tr.innerHTML=`<td><select id="rt-id-${k}" data-testid="rt-id-${k}" style="min-width:126px">${idOpts}</select></td>`+
       `<td><select id="rt-book-${k}" data-testid="rt-book-${k}" style="min-width:126px">${bkOpts}</select></td>`+
-      `<td class="num"><input class="num" id="rt-start-${k}" data-testid="rt-start-${k}" placeholder="0" style="max-width:120px" value="${esch(p.start||'')}"/></td>`+
+      `<td class="num"><div class="tpsl"><span class="tpsl-tp" id="rt-tp-${k}" data-testid="rt-tp-${k}"></span><input class="num" id="rt-start-${k}" data-testid="rt-start-${k}" placeholder="0" style="max-width:120px" value="${esch(p.start||'')}"/><span class="tpsl-sl" id="rt-sl-${k}" data-testid="rt-sl-${k}"></span></div></td>`+
       `<td class="num"><input class="num" id="rt-end-${k}" data-testid="rt-end-${k}" placeholder="0" style="max-width:120px" value="${esch(p.end||'')}"/></td>`+
       `<td class="num"><input class="num" id="rt-bonusmon-${k}" data-testid="rt-bonusmon-${k}" placeholder="se già noto" style="max-width:120px" value="${esch(p.rsBonusMon??'')}"/></td>`+
       `<td style="text-align:center"><button class="btn ghost" data-testid="rt-rm-${k}" style="padding:4px 10px" title="Rimuovi riga">✕</button></td>`;
     tb.appendChild(tr);
     tr.querySelector('button').addEventListener('click',()=>{tr.remove();rsEmptyCheck();updateRsTotal();});
+    rsUpdateTpSl();
     return tr;
+  }
+  // TP (saldo a cui fermarti) e SL (saldo a cui hai perso lo stake) per ogni saldo iniziale.
+  // Stake = il più basso tra il tuo stake e il limite della promo (dalle % e dai massimi del Passo 1)
+  function rsUpdateTpSl(){
+    const st=rsStakeOf({rsRealPct:val('rs-realpct'),rsRealMax:val('rs-realmax'),rsFunPct:val('rs-funpct'),rsFunMax:val('rs-funmax')});
+    const S=st.S,tp=rsTpGlobal;
+    [...$('rs-rows').children].forEach(tr=>{const k=tr.dataset.k,tpEl=$('rt-tp-'+k),slEl=$('rt-sl-'+k),inp=$('rt-start-'+k);if(!tpEl||!inp)return;
+      const raw=inp.value.trim(),v=numParse(raw);
+      if(raw===''||isNaN(v)){tpEl.textContent='';slEl.textContent='';return;}
+      tpEl.textContent='TP '+fmt(v+S*tp/100);slEl.textContent='SL '+fmt(v-S);});
+    $('rs-tpsl-info').textContent=`Stake ${fmt(S)}${st.limited?' (limite della promo)':''} · take profit ${String(tp).replace('.',',')}% = +${fmt(S*tp/100)}. Sopra ogni saldo iniziale vedi il TP, sotto lo SL.`;
   }
   function rsEmptyCheck(){$('rs-empty').classList.toggle('hidden',$('rs-rows').children.length>0);}
   function updateRsTotal(){
@@ -2633,6 +2667,7 @@
     const el=$('rs-total');el.textContent=fmt(tot);el.className=Math.round(tot*100)>=0?'pos':'neg';
   }
   $('rs-rows').addEventListener('input',updateRsTotal);
+  $('rs-rows').addEventListener('input',rsUpdateTpSl);
 
 
   // ---- monetizza bonus: saldo iniziale / di cui bonus / saldo finale per ogni ID che riceve il rimborso ----
@@ -2814,6 +2849,7 @@
     });
     setRsFunRules(r);$('modal-funrules').classList.add('hidden');renderMoves();
   });
+  $('rs-global-tp').addEventListener('change',()=>{if(!setRsTpGlobal(val('rs-global-tp')))alert('Inserisci una percentuale valida, maggiore di zero.');renderMoves();});
   $('rs-global-stake').addEventListener('change',()=>{
     if(!setRsStakeGlobal(val('rs-global-stake'))){alert('Inserisci uno stake valido, maggiore di zero.');}
     renderMoves();
@@ -3379,9 +3415,9 @@
   $('sort-tipos').addEventListener('click',()=>{tipos.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('sort-games').addEventListener('click',()=>{games.sort((a,b)=>a.localeCompare(b,'it',{sensitivity:'base'}));save();renderSetup();refreshSelects();});
   $('new-id').addEventListener('keydown',e=>{if(e.key==='Enter')$('add-id').click();});
-  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,cashManual:{v:cashManual,ts:cashManualTs},rsStake:rsStakeGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
+  $('exp-json').addEventListener('click',()=>dl(new Blob([JSON.stringify({books,tipos,games,ids,moves,drafts,recurring,promos,cashmoves,cashStart,cashActual,cashActualTs,cashManual:{v:cashManual,ts:cashManualTs},rsStake:rsStakeGlobal,rsTp:rsTpGlobal,rsFunRules},null,2)],{type:'application/json'}),'profit-tracker-dati.json'));
   $('imp-json').addEventListener('click',()=>$('imp-file').click());
-  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(d.cashManual&&typeof d.cashManual==='object'){cashManual=d.cashManual.v||{};cashManualTs=d.cashManual.ts||{};}if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}rsFreezeEV();save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
+  $('imp-file').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.books))books=d.books;if(Array.isArray(d.tipos))tipos=d.tipos;if(Array.isArray(d.games))games=d.games;if(Array.isArray(d.ids))ids=d.ids.map(normId);if(Array.isArray(d.moves))moves=d.moves.map(m=>({uid:m.uid||uid(),...m}));if(Array.isArray(d.drafts))drafts=d.drafts.map(x=>({id:x.id||uid(),...x}));if(Array.isArray(d.recurring))recurring=d.recurring.map(r=>({uid:r.uid||uid(),...r}));if(Array.isArray(d.cashmoves))cashmoves=d.cashmoves.map(c=>({uid:c.uid||uid(),...c}));if(d.cashStart&&typeof d.cashStart==='object')cashStart=d.cashStart;if(d.cashActual&&typeof d.cashActual==='object')cashActual=d.cashActual;if(d.cashActualTs&&typeof d.cashActualTs==='object')cashActualTs=d.cashActualTs;if(d.cashManual&&typeof d.cashManual==='object'){cashManual=d.cashManual.v||{};cashManualTs=d.cashManual.ts||{};}if(numParse(d.rsStake)>0)setRsStakeGlobal(d.rsStake,true);if(numParse(d.rsTp)>0)setRsTpGlobal(d.rsTp,true);if(d.rsFunRules&&typeof d.rsFunRules==='object')setRsFunRules(d.rsFunRules,true);if(Array.isArray(d.promos)){promos=d.promos.map(p=>({uid:p.uid||uid(),...p}));savePromo();renderPromo();}rsFreezeEV();save();renderSetup();renderRecurring();renderAnag();renderMoves();renderDraftsBadge();renderCash();renderCashSummary();refreshSelects();alert('Dati caricati.');}catch(err){alert('File non valido.');}};r.readAsText(f);});
   $('wipe').addEventListener('click',()=>{if(confirm('Cancellare TUTTI i movimenti? (book e ID restano)')){moves=[];save();renderMoves();}});
   $('fix-orphan-pids').addEventListener('click',()=>{
     const validLabels=new Set(ids.map(x=>x.label));
@@ -3659,7 +3695,7 @@
         {range:GS_TABS.cashmoves.name+'!A1:A'+GS_TABS.cashmoves.maxRows,values:gsPad(cashmoves.map(b=>JSON.stringify(b)),GS_TABS.cashmoves.maxRows)},
         {range:GS_TABS.promos.name+'!A1:A'+GS_TABS.promos.maxRows,values:gsPad(promos.map(b=>JSON.stringify(b)),GS_TABS.promos.maxRows)},
         {range:GS_TABS.savedMultiples.name+'!A1:A'+GS_TABS.savedMultiples.maxRows,values:gsPad(savedMultiplesRaw.map(b=>JSON.stringify(b)),GS_TABS.savedMultiples.maxRows)},
-        {range:'Meta!A1:A8',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)],[JSON.stringify(rsFunRules)],[JSON.stringify({v:cashManual,ts:cashManualTs})]]}
+        {range:'Meta!A1:A8',values:[[JSON.stringify(cashStart)],[JSON.stringify(cashActual)],[tgCfgRaw],[promoCfgRaw],[JSON.stringify(cashActualTs)],[String(rsStakeGlobal)+'|'+String(rsTpGlobal)],[JSON.stringify(rsFunRules)],[JSON.stringify({v:cashManual,ts:cashManualTs})]]}
       ];
       await gsApi('/values:batchUpdate',{method:'POST',body:JSON.stringify({valueInputOption:'RAW',data})});
       localStorage.setItem('tk_gs_last_sync',new Date().toISOString());
@@ -3686,9 +3722,10 @@
     try{pc=metaRows[3]?JSON.parse(metaRows[3][0]):null;}catch(e){pc=null;}
     try{cats=metaRows[4]?JSON.parse(metaRows[4][0]):{};}catch(e){cats={};}
     const rsStake=metaRows[5]?numParse(metaRows[5][0]):null;
+    const rsTp=metaRows[5]?numParse(String(metaRows[5][0]).split('|')[1]):null;
     let rsFunRulesIn=null;try{rsFunRulesIn=metaRows[6]?JSON.parse(metaRows[6][0]):null;}catch(e){rsFunRulesIn=null;}
     let cmIn=null;try{cmIn=metaRows[7]?JSON.parse(metaRows[7][0]):null;}catch(e){cmIn=null;}
-    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake,rsFunRules:rsFunRulesIn,cashManual:cmIn};
+    return {books:byIdx.books,tipos:byIdx.tipos,games:byIdx.games,ids:byIdx.ids,moves:byIdx.moves,drafts:byIdx.drafts,recurring:byIdx.recurring,cashmoves:byIdx.cashmoves,promos:byIdx.promos,savedMultiples:byIdx.savedMultiples,cashStart:cs,cashActual:ca,tgCfg:tg,promoCfg:pc,cashActualTs:cats,rsStake,rsTp,rsFunRules:rsFunRulesIn,cashManual:cmIn};
   }
   function gsScheduleSync(){
     if(!gsCfg||!gsCfg.enabled)return;
